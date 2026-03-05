@@ -188,9 +188,10 @@ export default async function SuperAdminPage({
                 </div>
 
                 {/* KPI Grid - Temporal & Absolute */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
                     {[
                         { label: 'Revenue Mensuel', value: monthlyRevenue, color: 'text-emerald-400', sub: `${new Date(0, month - 1).toLocaleString('fr', { month: 'long' })} ${year}`, icon: <Currency /> },
+                        { label: 'Revenue Hebdo', value: weeklyRevenue, color: 'text-blue-400', sub: `Sem. du ${startOfWeek.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`, icon: <Time /> },
                         { label: 'Dette Totale', value: totalRemainingToRecover, color: 'text-red-400', sub: 'À récupérer sur prêts actifs', icon: <Document /> },
                         { label: 'Volume Surplus', value: totalGlobalSurplus, color: 'text-blue-400', sub: 'Crédits clients disponibles', icon: <Wallet /> },
                         { label: 'Recouvrement Net', value: totalRemainingToRecover - totalGlobalSurplus, color: 'text-amber-400', sub: 'Objectif net ajusté', icon: <CheckmarkFilled /> }
