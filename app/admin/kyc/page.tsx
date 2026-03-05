@@ -139,7 +139,7 @@ export default async function AdminKycPage() {
                                             </tr>
                                         ))}
                                         {(!history || history.length === 0) && (
-                                            <tr><td colSpan={4} className="p-8 text-center text-slate-600 italic text-xs uppercase tracking-widest">Aucun historique disponible</td></tr>
+                                            <tr><td colSpan={5} className="p-8 text-center text-slate-600 italic text-xs uppercase tracking-widest">Aucun historique disponible</td></tr>
                                         )}
                                     </tbody>
                                 </table>

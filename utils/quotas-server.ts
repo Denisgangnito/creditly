@@ -54,10 +54,10 @@ export async function checkGlobalQuotasStatus(month?: number, year?: number) {
             const pid = p.id;
             const q = (quotaLimits || []).find((ql: any) => ql.plan_id === pid);
 
-            // DEFAULT TO 0 (BLOCKED) if not in the quotas table
-            const limit = q ? parseInt(q.monthly_limit) : 0;
+            // DEFAULT TO -1 (UNLIMITED) if not in the quotas table
+            const limit = q ? parseInt(q.monthly_limit) : -1;
             const count = counts[pid] || 0;
-            const reached = limit > 0 ? count >= limit : true; // If limit is 0, it's always reached (blocked)
+            const reached = limit >= 0 ? count >= limit : false; // If limit is negative, it's unlimited
 
             const quotaObj = {
                 count,
