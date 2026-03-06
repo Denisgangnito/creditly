@@ -25,7 +25,16 @@ export const LoanRequestSchema = z.object({
     payoutNetwork: z.enum(['MTN', 'Moov', 'Celtiis']),
 
     // Waiver fields
-    birthDate: z.string().min(1, "La date de naissance est requise"),
+    birthDate: z.string().min(1, "La date de naissance est requise").refine((date) => {
+        const birth = new Date(date);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+        return age >= 18;
+    }, "Vous devez avoir au moins 18 ans pour obtenir un prêt"),
     address: z.string().min(5, "L'adresse est trop courte"),
     idDetails: z.string().min(5, "Les détails de la pièce sont requis"),
     city: z.string().min(2, "La ville est requise"),

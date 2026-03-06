@@ -396,10 +396,10 @@ export default function AdminLoanTable({ rows, currentUserRole }: {
 
                         <button
                             onClick={handlePrintWaiver}
-                            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2 no-print"
+                            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2 no-print active:scale-95 shadow-xl shadow-blue-500/20"
                         >
                             <Printer size={18} />
-                            Imprimer pour Archivage Physique
+                            Télécharger PDF / Imprimer l'Archivage
                         </button>
                     </div>
                 )}
@@ -407,45 +407,72 @@ export default function AdminLoanTable({ rows, currentUserRole }: {
 
             {/* Hidden Printable Version for Admin */}
             {viewWaiver && (
-                <div className="hidden print-only print:block text-black bg-white p-12 font-serif text-sm leading-relaxed" id="admin-printable-waiver">
-                    <div className="text-center mb-10 border-b-2 border-black pb-6">
-                        <h1 className="text-2xl font-bold uppercase mb-1">Creditly</h1>
-                        <p className="text-[10px] tracking-widest uppercase font-bold">Document d'Archivage Officiel</p>
-                        <div className="mt-4 text-xl font-bold border-y border-black py-2">RECONNAISSANCE DE DETTE & DÉCHARGE DE RESPONSABILITÉ</div>
-                    </div>
-
-                    <div className="space-y-6">
-                        <p>Je soussigné(e), <strong>{viewWaiver.user.split('(')[0]}</strong>,</p>
-
-                        <div className="grid grid-cols-2 gap-4 border border-black p-4">
-                            <p>Né(e) le : <strong>{viewWaiver.borrower_birth_date ? new Date(viewWaiver.borrower_birth_date).toLocaleDateString('fr-FR') : '________________'}</strong></p>
-                            <p>ID : <strong>{viewWaiver.borrower_id_details || '________________'}</strong></p>
-                            <p className="col-span-2">Adresse : <strong>{viewWaiver.borrower_address || '________________'}</strong></p>
+                <div className="print-only-container text-black bg-white p-12 font-serif" id="admin-printable-waiver">
+                    <div className="max-w-[800px] mx-auto">
+                        <div className="text-center mb-10 border-b-2 border-black pb-6">
+                            <h1 className="text-3xl font-black uppercase mb-1 tracking-tighter">Creditly</h1>
+                            <p className="text-[10px] tracking-widest uppercase font-bold text-gray-600">Document d'Archivage Officiel (Généré Numériquement)</p>
+                            <div className="mt-6 text-xl font-bold border-y-2 border-black py-4">RECONNAISSANCE DE DETTE & DÉCHARGE DE RESPONSABILITÉ</div>
                         </div>
 
-                        <p className="text-justify">
-                            Reconnais avoir reçu de la part de l'organisation <strong>Creditly</strong>, un prêt sans intérêt d'un montant total de :
-                        </p>
+                        <div className="space-y-8 text-sm leading-relaxed text-black">
+                            <p className="text-lg">Je soussigné(e), <strong className="border-b border-black px-2">{viewWaiver.user.split('(')[0]}</strong>,</p>
 
-                        <div className="text-center p-4 bg-gray-100 border-2 border-dashed border-gray-400 font-bold text-xl">
-                            {viewWaiver.amount.toLocaleString()} FCFA
-                        </div>
-
-                        <p className="text-justify italic">
-                            Le bénéficiaire s'engage au remboursement intégral à l'échéance convenue. Cette reconnaissance de dette signée numériquement fait foi de l'engagement contractuel.
-                        </p>
-
-                        <div className="grid grid-cols-2 gap-12 mt-16 pb-12">
-                            <div className="border-t border-black pt-2">
-                                <p className="font-bold underline mb-10">Signature du Débiteur :</p>
-                                <p className="italic font-serif text-lg">Signé numériquement</p>
-                                <p className="text-[10px] text-gray-500 mt-2 italic">Date : {viewWaiver.waiver_signed_at ? new Date(viewWaiver.waiver_signed_at).toLocaleDateString('fr-FR') : new Date(viewWaiver.date).toLocaleDateString('fr-FR')}</p>
-                            </div>
-                            <div className="border-t border-black pt-2">
-                                <p className="font-bold underline mb-10">Sceau Creditly :</p>
-                                <div className="relative h-12">
-                                    <span className="absolute border-2 border-blue-900 text-blue-900 px-4 py-1 text-[10px] font-black uppercase">DOCUMENT CERTIFIÉ</span>
+                            <div className="grid grid-cols-2 gap-x-8 gap-y-4 border-2 border-black p-6 bg-gray-50/50">
+                                <div>
+                                    <p className="text-[9px] font-black uppercase text-gray-500 mb-1">Date de Naissance</p>
+                                    <p className="font-bold">{viewWaiver.borrower_birth_date ? new Date(viewWaiver.borrower_birth_date).toLocaleDateString('fr-FR') : '________________'}</p>
                                 </div>
+                                <div>
+                                    <p className="text-[9px] font-black uppercase text-gray-500 mb-1">Pièce d'Identité / ID</p>
+                                    <p className="font-bold">{viewWaiver.borrower_id_details || '________________'}</p>
+                                </div>
+                                <div className="col-span-2">
+                                    <p className="text-[9px] font-black uppercase text-gray-500 mb-1">Adresse de Résidence & Ville</p>
+                                    <p className="font-bold">{viewWaiver.borrower_address || '________________'} - {viewWaiver.borrower_city || '________________'}</p>
+                                </div>
+                            </div>
+
+                            <p className="text-base text-justify">
+                                Reconnais sans réserve avoir reçu de la part de l'organisation <strong>Creditly</strong>, un prêt sans intérêt d'un montant total de :
+                            </p>
+
+                            <div className="text-center p-8 bg-gray-100 border-4 border-double border-black font-black text-3xl italic tracking-tighter">
+                                {viewWaiver.amount.toLocaleString()} FCFA
+                            </div>
+
+                            <div className="space-y-4 text-justify italic bg-gray-50 p-6 border-l-4 border-black">
+                                <p>
+                                    "Le bénéficiaire s'engage par la présente au remboursement intégral de ladite somme selon l'échéance convenue lors de la demande."
+                                </p>
+                                <p>
+                                    "Cette reconnaissance de dette est générée suite à une signature électronique sécurisée et validée sur la plateforme Creditly. Elle fait foi de l'engagement contractuel du débiteur envers le créancier."
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-12 mt-20 pb-12">
+                                <div className="border-t-2 border-black pt-4">
+                                    <p className="font-black underline mb-12 uppercase text-[10px] tracking-widest">Le Débiteur (Signature)</p>
+                                    <div className="space-y-1">
+                                        <p className="italic font-serif text-lg text-blue-900">Signé Électroniquement</p>
+                                        <p className="text-[10px] text-gray-500 font-mono">HASH-ID: {viewWaiver.id.substring(0, 13).toUpperCase()}</p>
+                                        <p className="text-[10px] text-gray-500 mt-2">Fait le : {viewWaiver.waiver_signed_at ? new Date(viewWaiver.waiver_signed_at).toLocaleString('fr-FR') : new Date(viewWaiver.date).toLocaleString('fr-FR')}</p>
+                                    </div>
+                                </div>
+                                <div className="border-t-2 border-black pt-4">
+                                    <p className="font-black underline mb-12 uppercase text-[10px] tracking-widest">Le Créancier (Sceau Creditly)</p>
+                                    <div className="relative h-16 flex items-center justify-center border-2 border-blue-900 rounded-full w-40 transform -rotate-12 opacity-80">
+                                        <div className="text-center">
+                                            <p className="text-[8px] font-black text-blue-900 uppercase leading-none">DOCUMENT</p>
+                                            <p className="text-sm font-black text-blue-900 uppercase">CERTIFIÉ</p>
+                                            <p className="text-[8px] font-black text-blue-900 uppercase leading-none">OFFICIEL</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-12 text-center text-[8px] text-gray-400 uppercase tracking-widest border-t border-gray-100 pt-4">
+                                Document généré par le système Creditly v2.0 - Toute falsification est passible de poursuites.
                             </div>
                         </div>
                     </div>
@@ -454,12 +481,52 @@ export default function AdminLoanTable({ rows, currentUserRole }: {
 
             <style jsx global>{`
                 @media print {
-                    .no-print { display: none !important; }
-                    .print-only { display: block !important; }
-                    body { background: white !important; color: black !important; }
-                    .glass-panel { border: none !important; background: transparent !important; box-shadow: none !important; }
+                    /* Hide EVERYTHING on the page */
+                    body > *:not(.print-only-container) {
+                        display: none !important;
+                    }
+                    
+                    /* Show ONLY the printable container and force it to the top */
+                    .print-only-container {
+                        display: block !important;
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100% !important;
+                        background: white !important;
+                        color: black !important;
+                        margin: 0 !important;
+                        padding: 20px !important;
+                        z-index: 9999999 !important;
+                    }
+
+                    /* Force text visibility and black color for all children */
+                    .print-only-container * {
+                        color: black !important;
+                        background-color: transparent !important;
+                        border-color: black !important;
+                        text-shadow: none !important;
+                        box-shadow: none !important;
+                    }
+
+                    /* Specific layout fixes for print */
+                    .grid { display: grid !important; }
+                    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+                    
+                    /* Reset body styles */
+                    body {
+                        background: white !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
                 }
-                .print-only { display: none; }
+                
+                /* Hide printable container by default in browser */
+                .print-only-container {
+                    display: none;
+                }
             `}</style>
         </div>
     )
