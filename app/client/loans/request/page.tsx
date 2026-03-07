@@ -27,11 +27,11 @@ export default async function LoanRequestPage() {
                 <div className="w-20 h-20 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
                     <Information size={40} />
                 </div>
-                <h1 className="text-4xl font-black mb-4 text-white uppercase italic tracking-tighter">Accès <span className="text-amber-500">Restreint.</span></h1>
-                <p className="mb-10 text-slate-500 font-black italic">Un abonnement actif est requis pour débloquer les services de prêt.</p>
+                <h1 className="text-4xl font-black mb-4 text-white uppercase italic tracking-tighter">Forfait <span className="text-amber-500">requis.</span></h1>
+                <p className="mb-10 text-slate-500 font-black italic">Vous devez choisir un forfait pour pouvoir demander un prêt.</p>
                 <Link href="/client/subscriptions">
                     <button className="premium-button active:scale-95 px-10">
-                        Explorer les Plans Elite
+                        Voir les forfaits
                     </button>
                 </Link>
             </div>
@@ -60,8 +60,8 @@ export default async function LoanRequestPage() {
                 <div className="w-20 h-20 bg-red-500/10 text-red-500 border border-red-500/20 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
                     <CloseFilled size={40} />
                 </div>
-                <h1 className="text-4xl font-black mb-4 text-white uppercase italic tracking-tighter">Capacité <span className="text-red-500">Atteinte.</span></h1>
-                <p className="mb-2 text-slate-400 font-bold italic">Vous avez atteint la limite de {planData.max_loans_per_month} prêts simultanés incluse dans votre offre {planData.name}.</p>
+                <h1 className="text-4xl font-black mb-4 text-white uppercase italic tracking-tighter">Limite <span className="text-red-500">atteinte.</span></h1>
+                <p className="mb-2 text-slate-400 font-bold italic">Vous avez déjà {planData.max_loans_per_month} prêts en cours. Finissez de payer pour en reprendre un autre.</p>
                 <div className="mb-10 text-xs font-black text-slate-600 uppercase tracking-widest">({currentActiveCount} / {planData.max_loans_per_month} dossiers actifs)</div>
                 <Link href="/client/dashboard">
                     <button className="premium-button bg-slate-800 border-white/5 active:scale-95 px-10">
@@ -84,10 +84,10 @@ export default async function LoanRequestPage() {
                 <div className="w-20 h-20 bg-red-500/10 text-red-500 border border-red-500/20 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
                     <CloseFilled size={40} />
                 </div>
-                <h1 className="text-4xl font-black mb-4 text-white uppercase italic tracking-tighter">Plafond <span className="text-red-500">Atteint.</span></h1>
-                <p className="mb-2 text-slate-400 font-bold italic">Votre encours cumulé a atteint la limite de votre offre {planData.name}.</p>
+                <h1 className="text-4xl font-black mb-4 text-white uppercase italic tracking-tighter">Limite <span className="text-red-500">atteinte.</span></h1>
+                <p className="mb-2 text-slate-400 font-bold italic">Vous avez atteint la somme maximale autorisée pour votre forfait {planData.name}.</p>
                 <div className="mb-10 p-4 rounded-xl bg-slate-950 border border-white/5 inline-block">
-                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Encours Actuel</div>
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Ce que vous devez déjà</div>
                     <div className="text-xl font-black text-white italic">{currentCumulativeDebt.toLocaleString()} <span className="text-[10px] text-slate-600">/ {planData.max_loan_amount.toLocaleString()} FCFA</span></div>
                 </div>
                 <div>
@@ -109,18 +109,18 @@ export default async function LoanRequestPage() {
 
     return (
         <div className="p-8 max-w-4xl mx-auto space-y-8">
-            <h1 className="text-center text-3xl font-bold premium-gradient-text uppercase italic tracking-tighter">Nouvelle Demande</h1>
+            <h1 className="text-center text-3xl font-bold premium-gradient-text uppercase italic tracking-tighter">Demander un prêt</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 flex items-center justify-between group hover:border-blue-500/20 transition-all">
                     <div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Capacité Restante</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Somme encore possible</p>
                         <p className="text-2xl font-black text-white italic tracking-tighter">
                             {remainingAmount.toLocaleString()} <span className="text-[10px] not-italic text-slate-600">FCFA</span>
                         </p>
                     </div>
                     <div className="text-right">
-                        <p className="text-[10px] font-bold text-slate-600 uppercase">Plafond: {planData.max_loan_amount.toLocaleString()}</p>
+                        <p className="text-[10px] font-bold text-slate-600 uppercase">Limite: {planData.max_loan_amount.toLocaleString()}</p>
                         <div className="h-1 w-24 bg-slate-800 rounded-full mt-2 overflow-hidden">
                             <div
                                 className="h-full bg-blue-500 rounded-full"
@@ -132,7 +132,7 @@ export default async function LoanRequestPage() {
 
                 <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 flex items-center justify-between group hover:border-emerald-500/20 transition-all">
                     <div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Dossiers Disponibles</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Prêts encore possibles</p>
                         <p className="text-2xl font-black text-white italic tracking-tighter">
                             {remainingLoans} <span className="text-[10px] not-italic text-slate-600">/ {planData.max_loans_per_month}</span>
                         </p>

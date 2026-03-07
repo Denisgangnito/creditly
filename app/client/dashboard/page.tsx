@@ -108,7 +108,7 @@ export default async function ClientDashboard() {
 
     const { data: recentRepayments } = await supabase
         .from('remboursements')
-        .select('id, amount_declared, surplus_amount, status, created_at, validated_at')
+        .select('id, loan_id, amount_declared, surplus_amount, status, created_at, validated_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(3)
@@ -135,19 +135,20 @@ export default async function ClientDashboard() {
         })),
         ...(recentLoans?.map(l => ({
             id: `loan-${l.id}`,
-            text: l.status === 'pending' ? `Demande de prêt de ${(l.amount || 0).toLocaleString()} FCFA en attente` :
-                l.status === 'active' ? `Prêt de ${(l.amount || 0).toLocaleString()} FCFA approuvé` :
-                    l.status === 'paid' ? `Prêt de ${(l.amount || 0).toLocaleString()} FCFA entièrement remboursé` :
-                        `Demande de prêt de ${(l.amount || 0).toLocaleString()} FCFA rejetée`,
+            text: l.status === 'pending' ? `Votre demande de ${(l.amount || 0).toLocaleString()} F est en cours` :
+                l.status === 'active' ? `C'est bon ! Votre prêt de ${(l.amount || 0).toLocaleString()} F est prêt` :
+                    l.status === 'overdue' ? `Attention : Votre prêt de ${(l.amount || 0).toLocaleString()} F est en retard` :
+                        l.status === 'paid' ? `Bravo ! Prêt de ${(l.amount || 0).toLocaleString()} F fini de payer` :
+                            `Désolé, votre prêt de ${(l.amount || 0).toLocaleString()} F a été refusé`,
             date: l.admin_decision_date || l.created_at,
             type: l.status === 'pending' ? 'pending' : 'status',
             status: l.status
         })) || []),
         ...(recentRepayments?.map(r => ({
             id: `rep-${r.id}`,
-            text: r.status === 'pending' ? `Preuve de remboursement de ${(r.amount_declared || 0).toLocaleString()} FCFA en attente` :
-                r.status === 'verified' ? `Remboursement de ${(r.amount_declared || 0).toLocaleString()} FCFA validé` :
-                    `Remboursement de ${(r.amount_declared || 0).toLocaleString()} FCFA rejeté`,
+            text: r.status === 'pending' ? `On vérifie votre reçu de ${(r.amount_declared || 0).toLocaleString()} F` :
+                r.status === 'verified' ? `Merci ! Votre paiement de ${(r.amount_declared || 0).toLocaleString()} F est reçu` :
+                    `Désolé, votre reçu de ${(r.amount_declared || 0).toLocaleString()} F a été rejeté`,
             date: r.validated_at || r.created_at,
             type: r.status === 'pending' ? 'pending' : 'status',
             status: r.status
@@ -159,9 +160,13 @@ export default async function ClientDashboard() {
     const kycColor = profile?.is_account_active ? 'bg-emerald-500/10 text-emerald-500' : kycDocs?.status === 'rejected' ? 'bg-red-500/10 text-red-500/80 animate-pulse' : kycDocs ? 'bg-amber-500/10 text-amber-500' : 'bg-red-500/10 text-red-500'
     const kycProgress = profile?.is_account_active ? '100' : kycDocs?.status === 'rejected' ? '33' : kycDocs ? '66' : '33'
 
-    // Calculate imminent deadlines (within 7 days OR already overdue)
+    const loansWithPendingPayments = new Set(
+        recentRepayments?.filter(r => r.status === 'pending').map(r => r.loan_id) || []
+    )
+
     const imminentDeadlines = recentLoans?.filter(l =>
         (l.status === 'active' || l.status === 'overdue') &&
+        !loansWithPendingPayments.has(l.id) &&
         l.due_date &&
         (new Date(l.due_date).getTime() - new Date().getTime() < 7 * 24 * 60 * 60 * 1000)
     ) || []
@@ -178,16 +183,16 @@ export default async function ClientDashboard() {
                             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Accès Membre Privilégié</span>
                         </div>
                         <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter uppercase italic leading-[0.85]">
-                            Centre de <br />
-                            <span className="premium-gradient-text">Contrôle.</span>
+                            Mon Espace <br />
+                            <span className="premium-gradient-text">Personnel.</span>
                         </h1>
                         <p className="text-slate-500 font-bold text-lg italic">
-                            Bonjour <span className="text-white not-italic">{profile?.prenom}</span>. Voici l&apos;état global de votre patrimoine.
+                            Salut <span className="text-white not-italic">{profile?.prenom}</span>. Voici où vous en êtes aujourd&apos;hui.
                         </p>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
                         <Link href={activeSub ? "/client/loans/request" : "/client/subscriptions"} className="premium-button w-full sm:w-auto px-10">
-                            <span>Nouveau Prêt</span>
+                            <span>Prendre un prêt</span>
                             <Add size={20} className="group-hover:rotate-90 transition-transform" />
                         </Link>
                     </div>
@@ -201,13 +206,13 @@ export default async function ClientDashboard() {
                                 <Time size={24} />
                             </div>
                             <div className="flex-1">
-                                <p className="text-[10px] font-black text-red-500 uppercase tracking-widest leading-none mb-1">Attention : Échéance Imminente</p>
+                                <p className="text-[10px] font-black text-red-500 uppercase tracking-widest leading-none mb-1">Attention : Il faut payer bientôt</p>
                                 <p className="text-sm font-bold text-white italic">
-                                    Vous avez {imminentDeadlines.length} prêt{imminentDeadlines.length > 1 ? 's' : ''} à rembourser sous peu. Soldéz-les pour éviter les pénalités.
+                                    Vous avez {imminentDeadlines.length} prêt{imminentDeadlines.length > 1 ? 's' : ''} en retard ou presque. Régularisez vite pour éviter les frais.
                                 </p>
                             </div>
                             <div className="text-red-500 font-black italic uppercase text-[10px] tracking-widest group-hover:translate-x-2 transition-transform">
-                                Régulariser →
+                                Payer maintenant →
                             </div>
                         </Link>
                     </div>
@@ -217,7 +222,7 @@ export default async function ClientDashboard() {
                 <div className="mb-16">
                     <div className="flex items-center gap-3 mb-8">
                         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent"></div>
-                        <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-500 whitespace-nowrap bg-slate-950 px-4">Suivi de Statut en Direct</h2>
+                        <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-500 whitespace-nowrap bg-slate-950 px-4">L&apos;état de mes dossiers</h2>
                         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent"></div>
                     </div>
 
@@ -240,7 +245,7 @@ export default async function ClientDashboard() {
 
                         {/* Subscription Status */}
                         <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 hover:border-white/10 transition-all flex flex-col justify-between min-h-[140px]">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-4">Abonnement</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-4">Mon Forfait</p>
                             <div className="space-y-4">
                                 <div className="flex items-baseline justify-between gap-2">
                                     <span className="text-xl font-black text-white italic truncate">{activeSub?.abonnements?.name || expiredSub?.abonnements?.name || 'N/A'}</span>
@@ -261,18 +266,18 @@ export default async function ClientDashboard() {
 
                         {/* Loan Status */}
                         <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 hover:border-white/10 transition-all flex flex-col justify-between min-h-[140px]">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-4">Crédit</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-4">Mon Prêt</p>
                             <div className="space-y-4">
                                 <div className="flex items-baseline justify-between gap-2">
                                     <span className="text-xl font-black text-white italic truncate">{latestLoan ? `${(latestLoan.amount || 0).toLocaleString()} F` : 'N/A'}</span>
-                                    <span className={`px-2 py-1 rounded text-[8px] font-black uppercase tracking-tighter ${latestLoan?.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' :
-                                        latestLoan?.status === 'overdue' ? 'bg-red-500/10 text-red-500 animate-pulse' :
+                                    <span className={`px-2 py-1 rounded text-[8px] font-black uppercase tracking-tighter ${latestLoan?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' :
+                                        latestLoan?.status === 'overdue' ? (loansWithPendingPayments.has(latestLoan.id) ? 'bg-amber-500/10 text-amber-500' : 'bg-red-500/10 text-red-500 animate-pulse') :
                                             latestLoan?.status === 'pending' ? 'bg-amber-500/10 text-amber-500' :
                                                 latestLoan?.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
-                                                    latestLoan?.status === 'paid' ? 'bg-blue-500/10 text-blue-500' : 'bg-slate-800 text-slate-500'
+                                                    latestLoan?.status === 'paid' ? 'bg-blue-500/10 text-blue-400' : 'bg-slate-800 text-slate-500'
                                         }`}>
                                         {latestLoan?.status === 'active' ? 'Approuvé' :
-                                            latestLoan?.status === 'overdue' ? 'En Retard' :
+                                            latestLoan?.status === 'overdue' ? (loansWithPendingPayments.has(latestLoan.id) ? 'Vérification' : 'En Retard') :
                                                 latestLoan?.status === 'pending' ? 'Étude' :
                                                     latestLoan?.status === 'rejected' ? 'Refusé' :
                                                         latestLoan?.status === 'paid' ? 'Soldé' : 'Aucun'}
@@ -280,15 +285,15 @@ export default async function ClientDashboard() {
                                 </div>
                                 <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest truncate">
                                     {latestLoan?.status === 'active' && latestLoan.due_date
-                                        ? `Échéance : ${new Date(latestLoan.due_date).toLocaleDateString('fr-FR')}`
-                                        : latestLoan ? `Initiée le ${new Date(latestLoan.created_at).toLocaleDateString('fr-FR')}` : 'Aucune demande'}
+                                        ? `Date limite : ${new Date(latestLoan.due_date).toLocaleDateString('fr-FR')}`
+                                        : latestLoan ? `Pris le ${new Date(latestLoan.created_at).toLocaleDateString('fr-FR')}` : 'Aucun prêt'}
                                 </p>
                             </div>
                         </div>
 
                         {/* Repayment Status */}
                         <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 hover:border-white/10 transition-all flex flex-col justify-between min-h-[140px]">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-4">Paiement</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-4">Mon Paiement</p>
                             <div className="space-y-4">
                                 <div className="flex items-baseline justify-between gap-2">
                                     <span className="text-xl font-black text-white italic truncate">{latestRepayment ? `${(latestRepayment.amount_declared || 0).toLocaleString()} F` : 'N/A'}</span>
@@ -296,13 +301,13 @@ export default async function ClientDashboard() {
                                         latestRepayment?.status === 'pending' ? 'bg-amber-500/10 text-amber-500' :
                                             latestRepayment?.status === 'rejected' ? 'bg-red-500/10 text-red-500' : 'bg-slate-800 text-slate-500'
                                         }`}>
-                                        {latestRepayment?.status === 'verified' ? 'Vérifié' :
-                                            latestRepayment?.status === 'pending' ? 'Contrôle' :
-                                                latestRepayment?.status === 'rejected' ? 'Invalidé' : 'Aucun'}
+                                        {latestRepayment?.status === 'verified' ? 'Validé' :
+                                            latestRepayment?.status === 'pending' ? 'Vérif' :
+                                                latestRepayment?.status === 'rejected' ? 'Refusé' : 'Aucun'}
                                     </span>
                                 </div>
                                 <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest truncate">
-                                    {latestRepayment ? `Soumis le ${new Date(latestRepayment.created_at).toLocaleDateString('fr-FR')}` : 'Aucune preuve'}
+                                    {latestRepayment ? `Envoyé le ${new Date(latestRepayment.created_at).toLocaleDateString('fr-FR')}` : 'Aucun reçu'}
                                 </p>
                             </div>
                         </div>
@@ -318,8 +323,8 @@ export default async function ClientDashboard() {
                             <div className="virtual-card border-slate-800 shadow-2xl hover:scale-[1.02] transition-transform duration-500 group">
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-white/50 uppercase tracking-widest leading-none">Identité Globale</p>
-                                        <p className="text-2xl font-black text-white italic uppercase tracking-tighter">Client Vérifié</p>
+                                        <p className="text-[10px] font-black text-white/50 uppercase tracking-widest leading-none">Mes Papiers</p>
+                                        <p className="text-2xl font-black text-white italic uppercase tracking-tighter">Profil Validé</p>
                                     </div>
                                     <div className="w-12 h-12 bg-white/5 backdrop-blur-xl rounded-2xl flex items-center justify-center text-blue-400 border border-white/10 group-hover:rotate-12 transition-transform">
                                         <CheckmarkOutline size={24} />
@@ -346,15 +351,15 @@ export default async function ClientDashboard() {
                                         <Rocket size={32} />
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Allocation Actuelle</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Montant possible</p>
                                         <p className={`text-xs font-black uppercase mt-1 ${activeSub ? 'text-emerald-400' : expiredSub ? 'text-red-500' : 'text-amber-500'}`}>
-                                            {activeSub ? 'Optimisé' : expiredSub ? 'Expiré' : 'Inactif'}
+                                            {activeSub ? 'Tout est bon' : expiredSub ? 'C&apos;est fini' : 'Pas actif'}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="mt-8 space-y-3">
                                     <h3 className="text-3xl sm:text-4xl font-black text-white uppercase italic tracking-tighter leading-none">
-                                        {activeSub?.abonnements?.name || expiredSub?.abonnements?.name || 'Aucun Plan'}
+                                        {activeSub?.abonnements?.name || expiredSub?.abonnements?.name || 'Aucun forfait'}
                                     </h3>
                                     {activeSub && activeSub.end_date && (
                                         <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] italic">
@@ -362,7 +367,7 @@ export default async function ClientDashboard() {
                                         </p>
                                     )}
                                     <Link href="/client/subscriptions" className="inline-flex items-center gap-2 text-[10px] font-black text-blue-500 uppercase tracking-widest hover:gap-3 transition-all">
-                                        Améliorer le Plan <Flash size={14} />
+                                        Changer de forfait <Flash size={14} />
                                     </Link>
                                 </div>
                             </div>
@@ -379,9 +384,9 @@ export default async function ClientDashboard() {
                                         </span>
                                     </div>
                                     <div className="flex-1 text-center sm:text-left">
-                                        <h3 className="text-lg font-black text-white uppercase tracking-tighter italic mb-1">Votre Gestionnaire Alloué</h3>
+                                        <h3 className="text-lg font-black text-white uppercase tracking-tighter italic mb-1">Votre Assistant Personnel</h3>
                                         <p className="text-xs font-bold text-slate-400 mb-4 max-w-lg">
-                                            Un conseiller exclusif a activé votre compte et s'occupera du suivi de votre dossier. Contactez-le pour toute demande spécifique.
+                                            Un assistant s&apos;occupe de vous et a validé votre compte. Contactez-le si vous avez besoin d&apos;aide.
                                         </p>
                                         <div className="flex flex-col sm:flex-row items-center gap-4">
                                             <div className="space-y-0.5">
@@ -436,9 +441,9 @@ export default async function ClientDashboard() {
                         {/* Quick Actions Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
                             {[
-                                { t: 'Mes Abonnements', d: 'Plans et avantages', icon: <Flash />, href: '/client/subscriptions' },
-                                { t: 'Mes Prêts', d: 'Historique et demandes', icon: <Rocket />, href: '/client/loans' },
-                                { t: 'Remboursements', d: 'Preuves de paiement', icon: <Wallet />, href: '/client/loans/repayment' }
+                                { t: 'Mon Forfait', d: 'Vos avantages', icon: <Flash />, href: '/client/subscriptions' },
+                                { t: 'Mes Prêts', d: 'Ma liste et mes demandes', icon: <Rocket />, href: '/client/loans' },
+                                { t: 'Mes Paiements', d: 'Envoyer mes reçus', icon: <Wallet />, href: '/client/loans/repayment' }
                             ].map((action, i) => (
                                 <Link key={i} href={action.href} className="glass-panel p-8 group hover:border-blue-500/40 relative overflow-hidden transition-all duration-500 bg-slate-900/50 border-slate-800">
                                     <div className="absolute -right-4 -bottom-4 opacity-5 text-white group-hover:scale-150 transition-transform duration-700">
@@ -467,7 +472,7 @@ export default async function ClientDashboard() {
                                     <Wallet size={24} />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">En-cours total</p>
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ce que je dois au total</p>
                                     <p className="text-2xl font-black text-white tracking-tighter italic truncate">{(totalOutstanding || 0).toLocaleString()} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
                                 </div>
                             </div>
@@ -493,7 +498,7 @@ export default async function ClientDashboard() {
                         {/* Support & Help */}
                         <div className="glass-panel p-8 bg-gradient-to-br from-slate-900 to-slate-950 border-slate-800 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-600/10 transition-colors"></div>
-                            <h4 className="text-xl font-black text-white uppercase tracking-tighter italic mb-6">Support & <br /> Conciergerie</h4>
+                            <h4 className="text-xl font-black text-white uppercase tracking-tighter italic mb-6">Aide & <br /> Messages</h4>
                             <div className="space-y-3">
                                 <button className="w-full p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between hover:bg-slate-900 transition-all group/item">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover/item:text-blue-400 transition-colors">Base de Savoir</span>
@@ -506,7 +511,7 @@ export default async function ClientDashboard() {
                                     className="w-full p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between hover:bg-slate-900 transition-all group/item"
                                 >
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover/item:text-emerald-400 transition-colors">Chat Direct</span>
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover/item:text-emerald-400 transition-colors">Sur WhatsApp</span>
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></div>
                                     </div>
                                     <Chat size={20} className="text-slate-700" />
@@ -525,7 +530,7 @@ export default async function ClientDashboard() {
                                 Conciergerie 24/7
                             </div>
                             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black italic uppercase tracking-tighter leading-[0.9]">
-                                Assistance <br /><span className="premium-gradient-text uppercase">Prioritaire.</span>
+                                Assistance <br /><span className="premium-gradient-text uppercase">Immédiate.</span>
                             </h2>
                             <p className="text-slate-500 font-bold text-lg max-w-md italic">
                                 Une question ? Nos experts vous accompagnent avec la réactivité exigée par votre statut.
@@ -542,7 +547,7 @@ export default async function ClientDashboard() {
                                 </Link>
                                 <button className="glass-panel bg-slate-800/50 border-slate-700 px-8 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center justify-center gap-3">
                                     <Help size={20} className="text-blue-500" />
-                                    Base de Connaissances
+                                    Questions fréquentes
                                 </button>
                             </div>
                         </div>

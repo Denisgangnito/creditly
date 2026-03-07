@@ -109,12 +109,16 @@ export default async function SuperAdminPage({
         .limit(5)
 
     // 6. Prêts Actifs & Retards (Top 5 Urgences)
-    const { data: urgentLoans } = await supabase
+    const { data: rawUrgentLoans } = await supabase
         .from('prets')
-        .select('*, user:users(nom, prenom, email, whatsapp)')
+        .select('*, user:users(nom, prenom, email, whatsapp), repayments:remboursements(status)')
         .in('status', ['active', 'overdue'])
         .order('due_date', { ascending: true })
-        .limit(5)
+        .limit(15)
+
+    const urgentLoans = rawUrgentLoans?.filter(l =>
+        !(l as any).repayments?.some((r: any) => r.status === 'pending')
+    ).slice(0, 5) || []
 
     // 5. Performance Admin (Audit)
     // On récupère tous les admins

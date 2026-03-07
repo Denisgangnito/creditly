@@ -31,19 +31,19 @@ export default async function SubscriptionsPage() {
                     <div className="space-y-6">
                         <Link href="/client/dashboard" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 hover:text-blue-400 transition-colors group">
                             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                            Centre d&apos;Opérations
+                            Retour à l&apos;accueil
                         </Link>
                         <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter uppercase italic leading-[0.85]">
-                            Elite <br /><span className="premium-gradient-text uppercase">Privilèges.</span>
+                            Mes <br /><span className="premium-gradient-text uppercase">Avantages.</span>
                         </h1>
                         <p className="text-slate-500 font-bold text-lg italic max-w-xl leading-relaxed">
-                            Accédez à des plafonds de financement supérieurs et à une priorité de traitement exclusive.
+                            Choisissez un forfait pour pouvoir demander plus d&apos;argent plus vite.
                         </p>
                         {!activeSub && (
                             <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 animate-fade-in shadow-lg shadow-amber-500/5">
                                 <Star size={20} className="animate-pulse" />
                                 <span className="text-xs font-black uppercase tracking-widest">
-                                    Financements mensuels limités par palier pour garantir la liquidité
+                                    Les demandes sont limitées chaque mois pour que tout le monde soit servi.
                                 </span>
                             </div>
                         )}
@@ -56,10 +56,10 @@ export default async function SubscriptionsPage() {
                                     <Flash size={24} />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1 italic">Système de Validation</p>
+                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1 italic">On vérifie</p>
                                     <p className="text-lg font-black text-white uppercase italic">Plan {pendingSub.plan?.name || '...'}</p>
                                     <p className="text-[10px] font-bold text-slate-300 uppercase italic">
-                                        Paiement déclaré : {Number(pendingSub.amount_paid || 0).toLocaleString()} FCFA
+                                        Somme envoyée : {Number(pendingSub.amount_paid || 0).toLocaleString()} FCFA
                                     </p>
                                     <p className="text-[8px] font-bold text-slate-500 uppercase italic">Vérification de la preuve en cours...</p>
                                 </div>
@@ -72,12 +72,12 @@ export default async function SubscriptionsPage() {
                                     <Misuse size={32} className="animate-pulse" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 italic">Paiement Refusé</p>
+                                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 italic">Paiement non validé</p>
                                     <p className="text-xl font-black text-white uppercase italic tracking-tighter">Plan {rejectedSub.plan?.name || '...'}</p>
                                     <p className="text-[10px] font-bold text-red-400 uppercase italic">
                                         Raison : {rejectedSub.rejection_reason || 'Preuve de paiement non conforme'}
                                     </p>
-                                    <p className="text-[8px] font-black text-slate-500 uppercase italic mt-1 font-mono tracking-widest leading-none">Veuillez choisir un plan pour resoumettre</p>
+                                    <p className="text-[8px] font-black text-slate-500 uppercase italic mt-1 font-mono tracking-widest leading-none">Choisissez un forfait pour reessayer</p>
                                 </div>
                             </div>
                         )}
@@ -145,8 +145,8 @@ export default async function SubscriptionsPage() {
                                 {quotasStatus[plan.id]?.reached && (
                                     <div className="mt-8 px-4 py-4 rounded-xl bg-slate-950/50 border border-amber-500/20 text-center animate-fade-in">
                                         <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-relaxed italic">
-                                            Capacité Mensuelle Atteinte <br />
-                                            <span className="text-[7px] text-slate-600 italic lowercase tracking-normal font-bold">Veuillez patienter jusqu'au 1er du mois prochain pour l'ouverture de nouveaux créneaux sur ce plan.</span>
+                                            Plus de place ce mois-ci <br />
+                                            <span className="text-[7px] text-slate-600 italic lowercase tracking-normal font-bold">Revenez le 1er du mois prochain, il y aura de la place.</span>
                                         </p>
                                     </div>
                                 )}

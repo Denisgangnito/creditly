@@ -27,7 +27,8 @@ export default async function AdminLoanPage({
             *,
             user:users!prets_user_id_fkey(email, nom, prenom, whatsapp, telephone),
             plan:subscription_snapshot_id(name),
-            admin:users!prets_admin_id_fkey(email, nom, prenom, role, whatsapp)
+            admin:users!prets_admin_id_fkey(email, nom, prenom, role, whatsapp),
+            repayments:remboursements(status)
         `)
         .eq('status', statusFilter)
         .order('created_at', { ascending: false })
@@ -40,7 +41,9 @@ export default async function AdminLoanPage({
         amount_paid: loan.amount_paid || 0,
         plan: loan.plan?.name || 'N/A',
         date: loan.request_date,
-        status: loan.status,
+        status: (loan.status === 'active' || loan.status === 'overdue') && (loan as any).repayments?.some((r: any) => r.status === 'pending')
+            ? 'Vérification'
+            : loan.status,
         payout_phone: loan.payout_phone,
         payout_name: loan.payout_name,
         payout_network: loan.payout_network,

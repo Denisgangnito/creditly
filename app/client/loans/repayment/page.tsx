@@ -44,10 +44,10 @@ export default async function RepaymentPage({
             <div className="main-container">
                 <div className="text-center mb-16 space-y-4">
                     <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter uppercase italic leading-none">
-                        Finalize <br />
-                        <span className="premium-gradient-text">Repayment.</span>
+                        Payer <br />
+                        <span className="premium-gradient-text">Mon Prêt.</span>
                     </h1>
-                    <p className="text-slate-500 font-bold text-lg italic">Restaurez votre ligne de crédit en soldant votre encours.</p>
+                    <p className="text-slate-500 font-bold text-lg italic">Payez ce que vous devez pour garder un bon profil.</p>
                 </div>
 
                 <div className="max-w-xl mx-auto mb-12">
@@ -56,20 +56,20 @@ export default async function RepaymentPage({
 
                         <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
                             <div className="space-y-1 text-center md:text-left">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Capital Principal Restant</p>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Ce qu&apos;il reste à payer</p>
                                 <p className="text-4xl font-black text-white italic tracking-tighter">
                                     {(remainingBalance || 0).toLocaleString()} <span className="text-xs not-italic text-slate-600">FCFA</span>
                                 </p>
                             </div>
                             <div className="px-6 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-center">
-                                <p className="text-[8px] font-black text-red-500/50 uppercase tracking-widest mb-1">Échéance Finale</p>
+                                <p className="text-[8px] font-black text-red-500/50 uppercase tracking-widest mb-1">Dernier délai</p>
                                 <p className="text-sm font-black text-red-500 uppercase italic tracking-widest">{dueDate}</p>
                             </div>
                         </div>
 
                         <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center">
-                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest italic">Capital Initial : {(loan.amount || 0).toLocaleString()} F</p>
-                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest italic">Déjà réglé : {(loan.amount_paid || 0).toLocaleString()} F</p>
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest italic">Somme de départ : {(loan.amount || 0).toLocaleString()} F</p>
+                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest italic">Déjà payé : {(loan.amount_paid || 0).toLocaleString()} F</p>
                         </div>
                     </div>
                 </div>
@@ -78,7 +78,7 @@ export default async function RepaymentPage({
                     <div className="glass-panel p-6 bg-slate-900/50 border-slate-800">
                         <h3 className="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                            Comptes de Dépôt (Remboursement)
+                            Envoyez l&apos;argent sur un de ces numéros
                         </h3>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">

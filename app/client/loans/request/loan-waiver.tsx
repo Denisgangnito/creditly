@@ -65,8 +65,8 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                 {/* Contract Header */}
                 <div className="p-8 border-b border-white/5 bg-slate-900/50">
                     <h2 className="text-xl font-black text-white uppercase italic tracking-tighter text-center">
-                        RECONNAISSANCE DE DETTE <br />
-                        <span className="text-blue-500">& DÉCHARGE DE RESPONSABILITÉ</span>
+                        CONTRAT DE PRÊT <br />
+                        <span className="text-blue-500">& ENGAGEMENT</span>
                     </h2>
                     <p className="text-[10px] text-slate-500 font-bold text-center mt-2 uppercase tracking-widest italic">
                         Collaboration Creditly – Prêt sans intérêt
@@ -91,7 +91,7 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Pièce d'identité (Type et Numéro)</label>
+                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Votre carte d'identité (Numéro)</label>
                                 <input
                                     type="text"
                                     placeholder="Ex: CNI 102930910"
@@ -101,7 +101,7 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                                 />
                             </div>
                             <div className="sm:col-span-2 space-y-1">
-                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Adresse complète</label>
+                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Où habitez-vous ?</label>
                                 <input
                                     type="text"
                                     placeholder="Quartier, Rue, Maison..."
@@ -111,7 +111,7 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                                 />
                             </div>
                             <div className="sm:col-span-2 space-y-1">
-                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Profession actuelle</label>
+                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Votre travail</label>
                                 <input
                                     type="text"
                                     placeholder="Ex: Enseignant, Commerçant..."
@@ -128,11 +128,11 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
 
                         <div className="p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-between">
                             <div>
-                                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Montant du prêt</p>
+                                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Somme prêtée</p>
                                 <p className="text-lg font-black text-white italic">{loanData.amount.toLocaleString()} FCFA</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">En lettres</p>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Écrit en lettres</p>
                                 <p className="text-xs font-bold text-white italic">{amountInWords} francs CFA</p>
                             </div>
                         </div>
@@ -143,10 +143,10 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                         </p>
 
                         <div className="space-y-2">
-                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ENGAGEMENT DE REMBOURSEMENT</h3>
+                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">POUR LE REMBOURSEMENT</h3>
                             <p>
-                                Mode de paiement : <strong className="text-white italic">{loanData.payoutNetwork}</strong> <br />
-                                Coordonnées : <strong className="text-white italic">{loanData.payoutPhone}</strong>
+                                Opérateur : <strong className="text-white italic">{loanData.payoutNetwork}</strong> <br />
+                                Numéro : <strong className="text-white italic">{loanData.payoutPhone}</strong>
                             </p>
                             <p className="text-xs italic text-slate-400">
                                 Tout défaut ou retard de paiement pourra entraîner des démarches de recouvrement légales.
@@ -195,12 +195,12 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                             />
                         </div>
                         <label htmlFor="accept" className="text-xs font-bold text-slate-400 cursor-pointer select-none">
-                            Je confirme avoir lu et j'accepte l'intégralité des termes de cette reconnaissance de dette et décharge de responsabilité.
+                            J&apos;ai bien lu et je suis d&apos;accord avec tout ce qui est écrit au dessus.
                         </label>
                     </div>
 
                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic ml-1">Signature Numérique (Saisissez votre nom complet)</label>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic ml-1">Signature (Écrivez votre nom complet ici)</label>
                         <input
                             type="text"
                             placeholder={`${userData.prenom} ${userData.nom}`}
@@ -208,7 +208,7 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                             onChange={e => setSignature(e.target.value)}
                             className="w-full px-6 py-4 rounded-xl border border-white/5 bg-slate-950 text-white font-black italic outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all shadow-inner"
                         />
-                        <p className="text-[9px] text-slate-600 italic">En saisissant votre nom, vous apposez une signature électronique ayant valeur contractuelle.</p>
+                        <p className="text-[9px] text-slate-600 italic">En écrivant votre nom, vous signez officiellement ce contrat.</p>
                     </div>
                 </div>
             </div>
@@ -235,13 +235,12 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                 >
                     {canSubmit ? (
                         <>
-                            <CheckmarkFilled size={20} className="mr-2" />
-                            Signer & Envoyer
+                            Valider ma demande
                         </>
                     ) : (
                         <>
                             <Warning size={20} className="mr-2" />
-                            Remplir & Accepter
+                            Remplissez tout
                         </>
                     )}
                 </ActionButton>

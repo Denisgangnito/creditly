@@ -46,7 +46,7 @@ export default function RepaymentForm({ loanId, remainingBalance }: { loanId: st
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-emerald-600/10 transition-colors"></div>
 
             <h2 className="text-3xl font-black mb-8 text-white uppercase italic tracking-tighter text-left">
-                Déclarer un <span className="premium-gradient-text uppercase">Paiement.</span>
+                Envoyer mon <span className="premium-gradient-text uppercase">reçu.</span>
             </h2>
 
             {error && (
@@ -58,12 +58,12 @@ export default function RepaymentForm({ loanId, remainingBalance }: { loanId: st
 
             <div className="space-y-8 text-left">
                 <div className="space-y-3">
-                    <label htmlFor="amount" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Montant de la Transaction (FCFA)</label>
+                    <label htmlFor="amount" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Somme envoyée (FCFA)</label>
                     <div className="relative group/input">
                         <input
                             id="amount"
                             type="number"
-                            placeholder="Montant exact transféré"
+                            placeholder="Ex: 50000"
                             value={amount}
                             max={remainingBalance}
                             onChange={(e) => setAmount(e.target.value)}
@@ -74,7 +74,7 @@ export default function RepaymentForm({ loanId, remainingBalance }: { loanId: st
                 </div>
 
                 <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Preuve de Transfert (Screenshot / Certificat)</label>
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Photo du reçu (Capture d&apos;écran)</label>
                     <div className="relative group/file">
                         <input
                             type="file"
@@ -92,12 +92,12 @@ export default function RepaymentForm({ loanId, remainingBalance }: { loanId: st
                                         <CheckmarkOutline size={32} />
                                     </div>
                                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] italic">{file.name}</p>
-                                    <p className="text-[8px] font-bold text-slate-700 uppercase mt-1 italic">Dossier prêt pour validation</p>
+                                    <p className="text-[8px] font-bold text-slate-700 uppercase mt-1 italic">C&apos;est bon ! Cliquez sur envoyer</p>
                                 </>
                             ) : (
                                 <>
                                     <Upload size={40} className="text-slate-700 group-hover:text-blue-500 mb-4 transition-transform group-hover:scale-110" />
-                                    <span className="text-[10px] font-black text-slate-600 group-hover:text-white uppercase tracking-[0.3em] transition-colors italic">Téléverser la preuve</span>
+                                    <span className="text-[10px] font-black text-slate-600 group-hover:text-white uppercase tracking-[0.3em] transition-colors italic">Choisir la photo</span>
                                     <span className="text-[8px] font-bold text-slate-800 uppercase mt-2 italic tracking-widest">Max 10 Mo</span>
                                 </>
                             )}
@@ -109,15 +109,15 @@ export default function RepaymentForm({ loanId, remainingBalance }: { loanId: st
                     onClick={handleAction}
                     disabled={!file || !amount}
                     loading={isPending}
-                    loadingText="Sécurisation du transfert..."
+                    loadingText="Envoi en cours..."
                     className="w-full py-6 text-sm bg-emerald-600 border-emerald-500 hover:bg-emerald-500 shadow-emerald-600/20 active:scale-[0.98] group/btn"
                 >
                     <Upload size={20} className="group-hover/btn:-translate-y-1 transition-transform" />
-                    Soumettre à l&apos;Analyse Administrative
+                    Envoyer mon reçu
                 </ActionButton>
             </div>
 
-            <p className="mt-8 text-center text-[9px] font-black text-slate-700 uppercase tracking-[0.2em] italic">Votre paiement sera audité et validé sous un délai de 4h maximum.</p>
+            <p className="mt-8 text-center text-[9px] font-black text-slate-700 uppercase tracking-[0.2em] italic">On vérifie votre reçu dans les prochaines heures pour valider votre paiement.</p>
         </div>
     )
 }

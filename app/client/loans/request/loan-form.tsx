@@ -54,17 +54,17 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
         setError(null)
 
         if (amount > subscription.plan.max_loan_amount) {
-            setError('Le montant dépasse votre plafond autorisé.')
+            setError('La somme est trop élevée pour votre forfait.')
             return false
         }
 
         if (quotasStatus[amount]?.reached) {
-            setError(`Ce montant (${amount.toLocaleString()} F) n'est plus disponible pour ce mois. Veuillez choisir un autre montant ou réessayer le mois prochain.`)
+            setError(`Cette somme (${amount.toLocaleString()} F) n'est plus disponible ce mois-ci. Essayez un autre montant ou revenez le mois prochain.`)
             return false
         }
 
         if (!payoutPhone || !payoutName || !payoutNetwork) {
-            setError('Veuillez remplir toutes les informations de réception.')
+            setError('Merci de remplir toutes les cases pour recevoir l&apos;argent.')
             return false
         }
 
@@ -114,7 +114,7 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
     return (
         <div className="glass-panel p-10 max-w-xl mx-auto bg-slate-900/50 border-slate-800 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-blue-600/10 transition-colors"></div>
-            <h2 className="text-3xl font-black mb-8 text-white uppercase italic tracking-tighter text-left">Nouvelle <span className="premium-gradient-text uppercase">Demande.</span></h2>
+            <h2 className="text-3xl font-black mb-8 text-white uppercase italic tracking-tighter text-left">Ma <span className="premium-gradient-text uppercase">Demande.</span></h2>
 
             <div className="mb-10 bg-slate-950 border border-white/5 rounded-2xl p-6 space-y-4 text-left">
                 <div className="flex items-center gap-3 border-b border-white/5 pb-4">
@@ -122,17 +122,17 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
                         <Information size={20} />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Allocation Actuelle</p>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Mon Forfait</p>
                         <p className="text-lg font-black text-white uppercase italic">{subscription.plan.name}</p>
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-2">
                     <div>
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Plafond Max</p>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Somme Max</p>
                         <p className="text-sm font-black text-white italic tracking-tighter">{subscription.plan.max_loan_amount.toLocaleString()} <span className="text-[10px] not-italic text-slate-700 font-bold">FCFA</span></p>
                     </div>
                     <div>
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Délai Règlement</p>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Délai pour payer</p>
                         <p className="text-sm font-black text-white italic tracking-tighter">{subscription.plan.repayment_delay_days} <span className="text-[10px] not-italic text-slate-700 font-bold">JOURS</span></p>
                     </div>
                 </div>
@@ -142,7 +142,7 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
                 <div className="mb-8 p-5 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center gap-4 animate-shake text-left">
                     <CloseFilled size={24} className="shrink-0" />
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-1 italic">Erreur Protocole</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest mb-1 italic">Un petit problème</p>
                         <p className="text-xs font-bold font-sans">{error}</p>
                     </div>
                 </div>
@@ -150,7 +150,7 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
 
             <div className="space-y-6 text-left">
                 <div className="space-y-3">
-                    <label htmlFor="amount" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Montant Sollicité (FCFA)</label>
+                    <label htmlFor="amount" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Combien voulez-vous (FCFA) ?</label>
                     <div className="relative group/input">
                         <input
                             id="amount"
@@ -173,7 +173,7 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Réseau</label>
+                        <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Opérateur</label>
                         <select
                             value={payoutNetwork}
                             onChange={(e) => setPayoutNetwork(e.target.value)}
@@ -186,7 +186,7 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
                     </div>
 
                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Numéro de réception</label>
+                        <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Numéro pour recevoir l&apos;argent</label>
                         <input
                             type="text"
                             placeholder="01XXXXXXXX"
@@ -200,15 +200,15 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
                 <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl space-y-2">
                     <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-2">
                         <Information size={14} />
-                        Avertissement Responsabilité
+                        Faites attention
                     </p>
                     <p className="text-[11px] font-bold text-slate-400 italic leading-relaxed">
-                        Veuillez renseigner correctement votre numéro et votre réseau. En cas d&apos;erreur, vous en assumerez l&apos;entière responsabilité.
+                        Vérifiez bien votre numéro. Si vous vous trompez, on ne pourra pas récupérer l&apos;argent.
                     </p>
                 </div>
 
                 <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Nom complet du compte</label>
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Votre nom sur le compte Mobile Money</label>
                     <input
                         type="text"
                         placeholder="Ex: Jean Dupont"
@@ -222,7 +222,7 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
                     onClick={handleNextStep}
                     className="w-full py-6 text-sm active:scale-[0.98] group/btn mt-4"
                 >
-                    Continuer vers la Décharge
+                    Étape suivante
                     <Money size={20} className="group-hover/btn:rotate-12 transition-transform ml-2" />
                 </ActionButton>
             </div>

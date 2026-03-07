@@ -26,7 +26,7 @@ function LoginForm() {
                 <div className="text-center mb-10">
                     <h1 className="text-4xl font-black gradient-text tracking-tighter mb-2 uppercase italic">Creditly</h1>
                     <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em]">
-                        Content de vous revoir
+                        Bon retour parmi nous
                     </p>
                 </div>
 
@@ -93,7 +93,7 @@ function LoginForm() {
 
                     <div className="text-center mt-6">
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                            Pas encore membre ?{' '}
+                            Pas encore de compte ?{' '}
                             <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700 transition-colors">S&apos;inscrire</Link>
                         </p>
                     </div>

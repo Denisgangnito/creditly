@@ -21,6 +21,16 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
         .eq('user_id', user.id)
         .single()
 
+    const { data: pendingRepayment } = await supabase
+        .from('remboursements')
+        .select('id')
+        .eq('loan_id', id)
+        .eq('status', 'pending')
+        .limit(1)
+        .single()
+
+    const hasPendingPayment = !!pendingRepayment
+
     if (error || !loan) {
         return (
             <div className="py-24 text-center space-y-6">
@@ -31,12 +41,16 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
     }
 
     const getStatusInfo = (status: string) => {
+        if (hasPendingPayment && (status === 'active' || status === 'overdue')) {
+            return { label: 'Vérif en cours', color: 'text-amber-400', icon: <Time size={24} className="text-amber-500" />, desc: 'On a reçu votre reçu. On vérifie tout ça pour sortir votre dossier des retards.' }
+        }
+
         switch (status) {
-            case 'active': return { label: 'Actif', color: 'text-emerald-400', icon: <CheckmarkFilled size={24} className="text-emerald-500" />, desc: 'Votre prêt est actif et en attente de remboursement.' }
-            case 'pending': return { label: 'En attente', color: 'text-amber-400', icon: <Time size={24} className="text-amber-500" />, desc: 'Votre demande est en cours de révision par nos analystes.' }
-            case 'paid': return { label: 'Remboursé', color: 'text-blue-400', icon: <CheckmarkFilled size={24} className="text-blue-500" />, desc: 'Félicitations ! Ce prêt a été intégralement remboursé.' }
-            case 'rejected': return { label: 'Refusé', color: 'text-red-400', icon: <CloseFilled size={24} className="text-red-500" />, desc: 'Malheureusement, votre demande n\'a pas pu être acceptée.' }
-            case 'overdue': return { label: 'En retard', color: 'text-rose-500', icon: <Information size={24} className="text-rose-500" />, desc: 'L\'échéance est dépassée. Veuillez régulariser votre situation au plus vite.' }
+            case 'active': return { label: 'En cours', color: 'text-emerald-400', icon: <CheckmarkFilled size={24} className="text-emerald-500" />, desc: 'Votre prêt est actif. Tout est bon.' }
+            case 'pending': return { label: 'En étude', color: 'text-amber-400', icon: <Time size={24} className="text-amber-500" />, desc: 'On regarde votre dossier pour vous répondre vite.' }
+            case 'paid': return { label: 'Fini', color: 'text-blue-400', icon: <CheckmarkFilled size={24} className="text-blue-500" />, desc: 'Bravo ! Vous avez fini de payer ce prêt.' }
+            case 'rejected': return { label: 'Refusé', color: 'text-red-400', icon: <CloseFilled size={24} className="text-red-500" />, desc: 'Désolé, votre demande n&apos;est pas passée cette fois.' }
+            case 'overdue': return { label: 'En retard', color: 'text-rose-500', icon: <Information size={24} className="text-rose-500" />, desc: 'La date est passée. Payez vite pour éviter les problèmes.' }
             default: return { label: status, color: 'text-slate-400', icon: <Information size={24} />, desc: '' }
         }
     }
@@ -51,18 +65,18 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                     <div className="space-y-4">
                         <Link href="/client/loans" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 hover:text-blue-400 transition-colors group">
                             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                            Operations Center
+                            Retour à la liste
                         </Link>
                         <h1 className="text-5xl font-black text-white tracking-tighter uppercase italic">
-                            Détails du <span className="premium-gradient-text">Dossier.</span>
+                            Détails de <span className="premium-gradient-text">Mon Prêt.</span>
                         </h1>
                         <p className="text-slate-500 font-bold text-lg italic">
-                            Identifiant Unique : <span className="text-white not-italic">{loan.id.split('-')[0].toUpperCase()}</span>
+                            Numéro du dossier : <span className="text-white not-italic">{loan.id.split('-')[0].toUpperCase()}</span>
                         </p>
                     </div>
                     {(loan.status === 'active' || loan.status === 'overdue') && (
                         <Link href={`/client/loans/repayment?loanId=${loan.id}`} className="premium-button px-10">
-                            Rembourser Maintenant
+                            Payer maintenant
                         </Link>
                     )}
                 </div>
@@ -88,7 +102,7 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                             )}
                         </div>
                         <div className="text-right">
-                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Engagement Total</p>
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Total à payer</p>
                             <p className="text-5xl font-black text-white tracking-tighter italic">{(loan.amount || 0).toLocaleString()} <span className="text-xs not-italic text-slate-700">FCFA</span></p>
                         </div>
                     </div>
@@ -99,7 +113,7 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                     {/* Dates Timeline */}
                     <div className="glass-panel p-10 space-y-8 bg-slate-900/50 border-slate-800 text-left">
                         <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] flex items-center gap-2 italic">
-                            <Calendar size={14} /> System Timeline
+                            <Calendar size={14} /> Dates importantes
                         </h3>
                         <div className="space-y-8 relative before:absolute before:left-[19px] before:top-2 before:bottom-0 before:w-px before:bg-white/5">
                             <div className="relative pl-12">
@@ -107,7 +121,7 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                                     <div className="w-2 h-2 rounded-full bg-slate-600"></div>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Demande Initiale</p>
+                                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Demande faite le</p>
                                     <p className="text-lg font-black text-white tracking-tight">{new Date(loan.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                                 </div>
                             </div>
@@ -118,7 +132,7 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                                         <div className={`w-2 h-2 rounded-full ${loan.status === 'rejected' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Instance Administrative</p>
+                                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Réponse donnée le</p>
                                         <p className="text-lg font-black text-white tracking-tight">{new Date(loan.admin_decision_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                                     </div>
                                 </div>
@@ -130,7 +144,7 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                                         <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 italic">Échéance de Remboursement</p>
+                                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 italic">Date limite pour payer</p>
                                         <p className="text-2xl font-black text-white italic tracking-tighter">{new Date(loan.due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                                     </div>
                                 </div>
@@ -141,11 +155,11 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                     {/* Conditions Section */}
                     <div className="glass-panel p-10 space-y-8 bg-slate-900/50 border-slate-800 text-left">
                         <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] flex items-center gap-2 italic">
-                            <Money size={14} /> Financial Summary
+                            <Money size={14} /> Résumé
                         </h3>
                         <div className="grid grid-cols-1 gap-6">
                             <div className="p-6 rounded-2xl bg-white/5 border border-white/5 group hover:border-white/10 transition-colors">
-                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2 italic">Capital Débloqué</p>
+                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2 italic">Somme reçue</p>
                                 <p className="text-3xl font-black text-white tracking-tighter italic">{(loan.amount || 0).toLocaleString()} FCFA</p>
                             </div>
                             <div className="p-6 rounded-2xl bg-white/5 border border-white/5 group hover:border-white/10 transition-colors">
@@ -153,8 +167,8 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                                 <p className="text-3xl font-black text-white tracking-tighter italic">0.00% <span className="text-[10px] text-slate-700 italic ml-2">Fixe</span></p>
                             </div>
                             <div className="p-6 rounded-2xl bg-blue-600 border border-blue-500 shadow-xl shadow-blue-600/20 group hover:scale-[1.02] transition-transform">
-                                <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-2 italic">Balance à Régler</p>
-                                <p className="text-3xl font-black text-white tracking-tighter italic">{(loan.amount || 0).toLocaleString()} FCFA</p>
+                                <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-2 italic">Reste à payer</p>
+                                <p className="text-3xl font-black text-white tracking-tighter italic">{(loan.amount - (loan.amount_paid || 0)).toLocaleString()} FCFA</p>
                             </div>
                         </div>
                     </div>

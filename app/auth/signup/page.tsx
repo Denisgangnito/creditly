@@ -34,7 +34,7 @@ function SignupForm() {
                 <div className="text-center mb-10">
                     <h1 className="text-4xl font-black premium-gradient-text tracking-tighter mb-2 uppercase italic">Creditly</h1>
                     <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] text-center w-full">
-                        Accédez à l&apos;excellence financière
+                        Votre partenaire de confiance
                     </p>
                 </div>
 
@@ -86,7 +86,7 @@ function SignupForm() {
                     }
                 }} className="space-y-8">
                     <div className="space-y-6">
-                        <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] italic border-b border-white/5 pb-2">Informations Personnelles</h3>
+                        <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] italic border-b border-white/5 pb-2">Mes Infos</h3>
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 text-left block">Prénom</label>
@@ -116,7 +116,7 @@ function SignupForm() {
 
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 text-left block">Date de Naissance</label>
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 text-left block">Date de naissance</label>
                                 <input
                                     name="birth_date"
                                     type="date"
@@ -154,7 +154,7 @@ function SignupForm() {
                         </div>
 
                         <div className="space-y-2 text-left">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 block">Email Professionnel</label>
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 block">Votre e-mail</label>
                             <input
                                 name="email"
                                 type="email"
@@ -167,7 +167,7 @@ function SignupForm() {
                         </div>
 
                         <div className="space-y-2 text-left">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 block">Mot de passe de sécurité</label>
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 block">Mon mot de passe</label>
                             <div className="relative">
                                 <input
                                     name="password"
@@ -190,7 +190,7 @@ function SignupForm() {
                     </div>
 
                     <div className="space-y-6 pt-4">
-                        <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] italic border-b border-white/5 pb-2">Informations sur le Garant</h3>
+                        <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] italic border-b border-white/5 pb-2">Infos sur mon Garant</h3>
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 text-left block">Prénom du Garant</label>
@@ -238,18 +238,18 @@ function SignupForm() {
                         loadingText="Création en cours..."
                         className="w-full py-6 active:scale-95 group transition-all"
                     >
-                        <span>Créer mon Espace</span>
+                        <span>Créer mon compte</span>
                         <ArrowRight className="group-hover:translate-x-1 transition-transform" />
                     </ActionButton>
 
                     <p className="text-[9px] font-bold text-slate-500 text-center uppercase tracking-widest px-4 italic leading-relaxed">
-                        En cliquant sur "Créer mon Espace", vous acceptez nos{' '}
+                        En cliquant sur "Créer mon compte", vous acceptez nos{' '}
                         <Link href="/politiques" className="text-blue-500 hover:underline">Politiques de Confidentialité et de Remboursement</Link>.
                     </p>
 
                     <div className="text-center mt-6">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                            Déjà membre ?{' '}
+                            Déjà un compte ?{' '}
                             <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 transition-colors">Se connecter</Link>
                         </p>
                     </div>
