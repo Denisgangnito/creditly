@@ -4,30 +4,49 @@ import React, { useState } from 'react'
 import { updateLoanStatus } from '../actions'
 import ConfirmModal from '@/app/components/ui/ConfirmModal'
 import { useRouter } from 'next/navigation'
-import { Printer } from '@carbon/icons-react'
+import { Printer, Download } from '@carbon/icons-react'
+import { LoanPDFDocument } from '@/app/client/loans/request/loan-pdf'
+import { PDFDownloadLink } from '@react-pdf/renderer'
+import { numberToFrench } from '@/utils/formatters'
 
-export default function AdminLoanTable({ rows, currentUserRole }: {
-    rows: Array<{
-        id: string;
-        user: string;
-        amount: number;
-        amount_paid: number;
-        plan: string;
-        date: string;
-        status: string;
-        payout_phone?: string;
-        payout_name?: string;
-        payout_network?: string;
-        borrower_birth_date?: string;
-        borrower_address?: string;
-        borrower_city?: string;
-        borrower_id_details?: string;
-        waiver_signed_at?: string;
-        whatsapp?: string;
-        admin: { name: string; role: string; whatsapp?: string } | null
-    }>,
-    currentUserRole: string | null
-}) {
+interface LoanRow {
+    id: string;
+    user: string;
+    profile: {
+        nom: string;
+        prenom: string;
+        email: string;
+    };
+    amount: number;
+    amount_paid: number;
+    plan: string;
+    date: string;
+    due_date?: string;
+    status: string;
+    payout_phone?: string;
+    payout_name?: string;
+    payout_network?: string;
+    borrower_birth_date?: string;
+    borrower_address?: string;
+    borrower_city?: string;
+    borrower_profession?: string;
+    borrower_id_details?: string;
+    waiver_signed_at?: string;
+    whatsapp?: string;
+    admin: { name: string; role: string; whatsapp?: string } | null;
+}
+
+interface AdminLoanTableProps {
+    rows: LoanRow[];
+    currentUserRole: string | null;
+    repaymentPhones: {
+        MTN: string;
+        Moov: string;
+        Celtiis: string;
+    };
+}
+
+export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones }: AdminLoanTableProps) {
     const [loading, setLoading] = useState<string | null>(null)
     const [confirmAction, setConfirmAction] = useState<{ id: string, status: 'active' | 'rejected' } | null>(null)
     const [rejectionReason, setRejectionReason] = useState('')
@@ -162,7 +181,7 @@ export default function AdminLoanTable({ rows, currentUserRole }: {
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                        {currentUserRole === 'admin_loan' && row.status === 'pending' ? (
+                                        {['admin_loan', 'superadmin', 'owner'].includes(currentUserRole || '') && row.status === 'pending' ? (
                                             <>
                                                 <button
                                                     onClick={() => setConfirmAction({ id: row.id, status: 'active' })}
@@ -260,7 +279,7 @@ export default function AdminLoanTable({ rows, currentUserRole }: {
                         </div>
 
                         <div className="flex gap-3 pt-6 border-t border-white/5">
-                            {currentUserRole === 'admin_loan' ? (
+                            {['admin_loan', 'superadmin', 'owner'].includes(currentUserRole || '') ? (
                                 <>
                                     {row.status === 'pending' ? (
                                         <>
@@ -339,68 +358,111 @@ export default function AdminLoanTable({ rows, currentUserRole }: {
             >
                 {viewWaiver && (
                     <div className="space-y-6">
-                        <div className="w-full mt-4 bg-black/40 border border-white/5 rounded-2xl p-6 space-y-6 text-left font-sans animate-fade-in max-h-[60vh] overflow-y-auto no-print">
+                        <div className="w-full mt-4 bg-white border border-slate-200 rounded-2xl p-6 space-y-6 text-left font-sans animate-fade-in max-h-[60vh] overflow-y-auto no-print shadow-inner text-slate-700">
                             <div className="space-y-4">
-                                <div className="pb-4 border-b border-white/5">
-                                    <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] italic mb-4">Informations Signataire</h4>
+                                <div className="pb-4 border-b border-slate-100">
+                                    <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] italic mb-4">Informations Signataire</h4>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Nom du Débiteur</p>
-                                            <p className="text-sm font-bold text-white italic">{viewWaiver.user.split('(')[0]}</p>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Nom du Débiteur</p>
+                                            <p className="text-sm font-bold text-slate-900 italic">{viewWaiver.user.split('(')[0]}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Pièce d'identité</p>
-                                            <p className="text-sm font-bold text-blue-400 italic">{viewWaiver.borrower_id_details || 'N/A'}</p>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Pièce d'identité</p>
+                                            <p className="text-sm font-bold text-blue-600 italic">{viewWaiver.borrower_id_details || 'N/A'}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Né(e) le</p>
-                                            <p className="text-sm font-bold text-slate-300 italic">{viewWaiver.borrower_birth_date ? new Date(viewWaiver.borrower_birth_date).toLocaleDateString('fr-FR') : 'N/A'}</p>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Né(e) le</p>
+                                            <p className="text-sm font-bold text-slate-600 italic">{viewWaiver.borrower_birth_date ? new Date(viewWaiver.borrower_birth_date).toLocaleDateString('fr-FR') : 'N/A'}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Ville</p>
-                                            <p className="text-sm font-bold text-slate-300 italic">{viewWaiver.borrower_city || 'N/A'}</p>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Ville</p>
+                                            <p className="text-sm font-bold text-slate-600 italic">{viewWaiver.borrower_city || 'N/A'}</p>
                                         </div>
                                         <div className="col-span-2">
-                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Adresse de Résidence</p>
-                                            <p className="text-sm font-bold text-slate-300 italic">{viewWaiver.borrower_address || 'N/A'}</p>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Adresse de Résidence</p>
+                                            <p className="text-sm font-bold text-slate-600 italic">{viewWaiver.borrower_address || 'N/A'}</p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="pb-4 border-b border-white/5">
-                                    <h4 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] italic mb-4">Termes Engagés</h4>
+                                <div className="pb-4 border-b border-slate-100">
+                                    <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] italic mb-4">Termes Engagés</h4>
                                     <div className="space-y-3">
-                                        <div className="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-white/5">
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Montant Principal</span>
-                                            <span className="text-lg font-black text-white italic tracking-tighter">{viewWaiver.amount.toLocaleString()} FCFA</span>
+                                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Montant Principal</span>
+                                            <span className="text-lg font-black text-slate-900 italic tracking-tighter">{viewWaiver.amount.toLocaleString()} FCFA</span>
                                         </div>
-                                        <p className="text-[10px] text-slate-400 leading-relaxed italic">
-                                            "L'emprunteur reconnaît avoir reçu cette somme et s'engage au remboursement intégral."
+                                        <div className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100 opacity-80">
+                                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Frais de dossier</span>
+                                            <span className="text-sm font-black text-blue-600 italic">500 FCFA</span>
+                                        </div>
+                                        <div className="flex justify-between items-center bg-blue-50 p-3 rounded-xl border border-blue-100">
+                                            <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Total à Rembourser</span>
+                                            <span className="text-xl font-black text-slate-900 italic tracking-tighter">{(viewWaiver.amount + 500).toLocaleString()} FCFA</span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 leading-relaxed italic border-l-2 border-red-500/50 pl-2">
+                                            "Tout versement supérieur à ce montant sera considéré comme une pénalité de traitement non-remboursable."
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="pt-2">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                                        <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
                                             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] leading-none mb-1">Signature Numérique Validée</p>
-                                            <p className="text-xs font-bold text-white italic">Signée le {viewWaiver.waiver_signed_at ? new Date(viewWaiver.waiver_signed_at).toLocaleString('fr-FR') : new Date(viewWaiver.date).toLocaleString('fr-FR')}</p>
+                                            <p className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em] leading-none mb-1">Signature Numérique Validée</p>
+                                            <p className="text-xs font-bold text-slate-900 italic">Signée le {viewWaiver.waiver_signed_at ? new Date(viewWaiver.waiver_signed_at).toLocaleString('fr-FR') : new Date(viewWaiver.date).toLocaleString('fr-FR')}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <button
-                            onClick={handlePrintWaiver}
-                            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2 no-print active:scale-95 shadow-xl shadow-blue-500/20"
-                        >
-                            <Printer size={18} />
-                            Télécharger PDF / Imprimer l'Archivage
-                        </button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 no-print">
+                            <button
+                                onClick={handlePrintWaiver}
+                                className="w-full py-4 bg-slate-900 border border-slate-800 text-slate-400 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
+                            >
+                                <Printer size={18} />
+                                Imprimer papier
+                            </button>
+                            <PDFDownloadLink
+                                document={
+                                    <LoanPDFDocument
+                                        userData={{
+                                            nom: viewWaiver.profile.nom,
+                                            prenom: viewWaiver.profile.prenom
+                                        }}
+                                        loanData={{
+                                            amount: viewWaiver.amount,
+                                            payoutNetwork: viewWaiver.payout_network || 'MTN',
+                                            dueDate: viewWaiver.due_date || 'N/A'
+                                        }}
+                                        personalData={{
+                                            address: viewWaiver.borrower_address || '',
+                                            city: viewWaiver.borrower_city || '',
+                                            profession: viewWaiver.borrower_profession || '',
+                                            idDetails: viewWaiver.borrower_id_details || ''
+                                        }}
+                                        signature={`${viewWaiver.profile.prenom} ${viewWaiver.profile.nom}`}
+                                        amountInWords={numberToFrench(viewWaiver.amount + 500)}
+                                        repaymentNumber={repaymentPhones[viewWaiver.payout_network as keyof typeof repaymentPhones] || repaymentPhones.MTN}
+                                    />
+                                }
+                                fileName={`Contrat_Creditly_${viewWaiver.profile.nom}_Archivage.pdf`}
+                                className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-blue-500/20 text-center"
+                            >
+                                {({ loading }) => (
+                                    <>
+                                        <Download size={18} />
+                                        {loading ? 'Génération...' : 'Télécharger PDF Pro'}
+                                    </>
+                                )}
+                            </PDFDownloadLink>
+                        </div>
                     </div>
                 )}
             </ConfirmModal>
@@ -434,16 +496,19 @@ export default function AdminLoanTable({ rows, currentUserRole }: {
                             </div>
 
                             <p className="text-base text-justify">
-                                Reconnais sans réserve avoir reçu de la part de l'organisation <strong>Creditly</strong>, un prêt sans intérêt d'un montant total de :
+                                Reconnais sans réserve avoir reçu de la part de l'organisation <strong>Creditly</strong>, un prêt sans intérêt d'un montant de <strong className="border-b border-black">{viewWaiver.amount.toLocaleString()} FCFA</strong>, majoré de frais de dossier fixes de <strong className="border-b border-black">500 FCFA</strong>, soit un montant total de :
                             </p>
 
                             <div className="text-center p-8 bg-gray-100 border-4 border-double border-black font-black text-3xl italic tracking-tighter">
-                                {viewWaiver.amount.toLocaleString()} FCFA
+                                {(viewWaiver.amount + 500).toLocaleString()} FCFA
                             </div>
 
                             <div className="space-y-4 text-justify italic bg-gray-50 p-6 border-l-4 border-black">
                                 <p>
                                     "Le bénéficiaire s'engage par la présente au remboursement intégral de ladite somme selon l'échéance convenue lors de la demande."
+                                </p>
+                                <p>
+                                    "Tout versement supérieur au montant total dû est considéré comme une pénalité de traitement et ne pourra donner lieu à aucun remboursement ou compensation."
                                 </p>
                                 <p>
                                     "Cette reconnaissance de dette est générée suite à une signature électronique sécurisée et validée sur la plateforme Creditly. Elle fait foi de l'engagement contractuel du débiteur envers le créancier."

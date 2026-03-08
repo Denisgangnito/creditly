@@ -33,14 +33,29 @@ export default async function AdminLoanPage({
         .eq('status', statusFilter)
         .order('created_at', { ascending: false })
 
+    // Fetch repayment numbers once
+    const { data: rawSettings } = await supabase
+        .from('system_settings')
+        .select('key, value')
+        .in('key', ['repayment_phone_mtn', 'repayment_phone_moov', 'repayment_phone_celtiis'])
+
+    const settingsMap = Object.fromEntries(rawSettings?.map((s: any) => [s.key, s.value]) || [])
+    const repaymentPhones = {
+        MTN: settingsMap['repayment_phone_mtn'] || '+229 01 53 32 44 90',
+        Moov: settingsMap['repayment_phone_moov'] || '+229 01 58 69 14 05',
+        Celtiis: settingsMap['repayment_phone_celtiis'] || '+229 01 44 14 00 67'
+    }
+
     const rows = loans?.map(loan => ({
         id: loan.id,
         user: `${loan.user?.prenom} ${loan.user?.nom} (${loan.user?.email})`,
+        profile: loan.user,
         whatsapp: loan.user?.whatsapp || loan.user?.telephone,
         amount: loan.amount,
         amount_paid: loan.amount_paid || 0,
         plan: loan.plan?.name || 'N/A',
         date: loan.request_date,
+        due_date: loan.due_date,
         status: (loan.status === 'active' || loan.status === 'overdue') && (loan as any).repayments?.some((r: any) => r.status === 'pending')
             ? 'Vérification'
             : loan.status,
@@ -50,6 +65,7 @@ export default async function AdminLoanPage({
         borrower_birth_date: loan.borrower_birth_date,
         borrower_address: loan.borrower_address,
         borrower_city: loan.borrower_city,
+        borrower_profession: loan.borrower_profession,
         borrower_id_details: loan.borrower_id_details,
         waiver_signed_at: loan.waiver_signed_at,
         admin: loan.admin ? {
@@ -90,7 +106,7 @@ export default async function AdminLoanPage({
                 </div>
 
                 <div className="glass-panel overflow-hidden bg-slate-900/50 border-slate-800">
-                    <AdminLoanTable rows={rows} currentUserRole={currentUserRole} />
+                    <AdminLoanTable rows={rows as any} currentUserRole={currentUserRole} repaymentPhones={repaymentPhones} />
                 </div>
             </div>
         </div>

@@ -24,7 +24,7 @@ interface QuotaStatus {
     }
 }
 
-export default function LoanRequestForm({ subscription, quotasStatus, userData }: {
+export default function LoanRequestForm({ subscription, quotasStatus, userData, repaymentPhones }: {
     subscription: Subscription,
     quotasStatus: QuotaStatus,
     userData: {
@@ -34,6 +34,11 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
         address?: string,
         city?: string,
         profession?: string
+    },
+    repaymentPhones: {
+        MTN: string;
+        Moov: string;
+        Celtiis: string;
     }
 }) {
     const router = useRouter()
@@ -105,6 +110,7 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
                     onConfirm={handleFinalSubmit}
                     onBack={() => setStep(1)}
                     loading={loading}
+                    repaymentPhones={repaymentPhones}
                 />
             </div>
         )

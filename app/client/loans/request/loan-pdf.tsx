@@ -206,9 +206,10 @@ interface LoanPDFProps {
     personalData: any;
     signature: string;
     amountInWords: string;
+    repaymentNumber: string;
 }
 
-export const LoanPDFDocument = ({ userData, loanData, personalData, signature, amountInWords }: LoanPDFProps) => (
+export const LoanPDFDocument = ({ userData, loanData, personalData, signature, amountInWords, repaymentNumber }: LoanPDFProps) => (
     <Document>
         <Page size="A4" style={styles.page}>
             <Text style={styles.watermark}>OFFICIEL</Text>
@@ -255,7 +256,7 @@ export const LoanPDFDocument = ({ userData, loanData, personalData, signature, a
 
             <View style={styles.section}>
                 <Text>
-                    Je m'engage formellement et irrévocablement à rembourser l'intégralité de cette somme au profit de <Text style={styles.bold}>Creditly</Text>, par transfert via le réseau <Text style={styles.bold}>{loanData.payoutNetwork}</Text> au numéro référencé <Text style={styles.bold}>{loanData.payoutPhone}</Text>, au plus tard le :
+                    Je m'engage formellement et irrévocablement à rembourser l'intégralité de cette somme au profit de <Text style={styles.bold}>Creditly</Text>, par transfert via le réseau <Text style={styles.bold}>{loanData.payoutNetwork}</Text> au numéro référencé <Text style={styles.bold}>{repaymentNumber}</Text>, au plus tard le :
                 </Text>
             </View>
 
@@ -267,6 +268,7 @@ export const LoanPDFDocument = ({ userData, loanData, personalData, signature, a
                 <Text style={styles.clauseText}>2. Tout retard excédant 48h après l'échéance pourra entraîner l'application de pénalités forfaitaires.</Text>
                 <Text style={styles.clauseText}>3. Le présent document constitue un titre de créance permettant d'engager toute procédure de recouvrement.</Text>
                 <Text style={styles.clauseText}>4. La signature numérique apposée ci-dessous a la même valeur juridique qu'une signature manuscrite.</Text>
+                <Text style={styles.clauseText}>5. Tout versement supérieur au montant total dû est considéré comme une pénalité de traitement non-remboursable.</Text>
             </View>
 
             {/* Signatures */}
@@ -284,7 +286,7 @@ export const LoanPDFDocument = ({ userData, loanData, personalData, signature, a
                         </View>
                     </View>
                     <Text style={styles.signatureLabel}>Pour Creditly (L'Organisation)</Text>
-                    <Text style={{ fontSize: 9, color: 'blue', fontWeight: 'bold', marginTop: 10 }}>CERTIFIÉ CONFORME</Text>
+                    <Text style={{ fontSize: 9, color: '#0000FF', fontWeight: 'bold', marginTop: 10 }}>CERTIFIÉ CONFORME</Text>
                 </View>
             </View>
 

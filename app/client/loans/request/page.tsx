@@ -116,6 +116,19 @@ export default async function LoanRequestPage() {
     // Fetch user profile for the waiver
     const { data: userData } = await supabase.from('users').select('nom, prenom, birth_date, address, city, profession').eq('id', user.id).single()
 
+    // Fetch repayment numbers from settings
+    const { data: rawSettings } = await supabase
+        .from('system_settings')
+        .select('key, value')
+        .in('key', ['repayment_phone_mtn', 'repayment_phone_moov', 'repayment_phone_celtiis'])
+
+    const settingsMap = Object.fromEntries(rawSettings?.map((s: any) => [s.key, s.value]) || [])
+    const repaymentPhones = {
+        MTN: settingsMap['repayment_phone_mtn'] || '+229 01 53 32 44 90',
+        Moov: settingsMap['repayment_phone_moov'] || '+229 01 58 69 14 05',
+        Celtiis: settingsMap['repayment_phone_celtiis'] || '+229 01 44 14 00 67'
+    }
+
     return (
         <div className="p-8 max-w-4xl mx-auto space-y-8">
             <h1 className="text-center text-3xl font-bold premium-gradient-text uppercase italic tracking-tighter">Demander un prêt</h1>
@@ -156,6 +169,7 @@ export default async function LoanRequestPage() {
                 subscription={sub}
                 quotasStatus={quotasStatus}
                 userData={userData || { nom: '', prenom: '' }}
+                repaymentPhones={repaymentPhones}
             />
         </div>
     )

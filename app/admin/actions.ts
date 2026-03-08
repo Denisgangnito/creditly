@@ -27,7 +27,7 @@ async function safeSendUserEmail(type: any, data: any) {
 
 export async function updateKycStatus(submissionId: string, status: 'approved' | 'rejected', notes?: string) {
     const role = await getCurrentUserRole()
-    if (!role || !['admin_kyc', 'superadmin'].includes(role)) {
+    if (!role || !['admin_kyc', 'superadmin', 'owner'].includes(role)) {
         return { error: "Accès refusé." }
     }
 
@@ -110,7 +110,7 @@ export async function updateKycStatus(submissionId: string, status: 'approved' |
 
 export async function activateUserAccount(userId: string) {
     const role = await getCurrentUserRole()
-    if (!role || !['admin_kyc', 'superadmin'].includes(role)) {
+    if (!role || !['admin_kyc', 'superadmin', 'owner'].includes(role)) {
         return { error: "Accès refusé : Vous n'avez pas les droits d'activation." }
     }
 
@@ -143,7 +143,7 @@ export async function activateUserAccount(userId: string) {
 
 export async function deactivateUserAccount(userId: string) {
     const role = await getCurrentUserRole()
-    if (!role || !['admin_kyc', 'superadmin'].includes(role)) {
+    if (!role || !['admin_kyc', 'superadmin', 'owner'].includes(role)) {
         return { error: "Accès refusé : Vous n'avez pas les droits de modification." }
     }
 
@@ -162,8 +162,8 @@ export async function deactivateUserAccount(userId: string) {
 
 export async function updateLoanStatus(loanId: string, status: 'approved' | 'rejected' | 'active' | 'paid', reason?: string) {
     const role = await getCurrentUserRole()
-    if (!role || role !== 'admin_loan') {
-        return { error: "Accès refusé. Réservé uniquement aux administrateurs de prêts." }
+    if (!role || !['admin_loan', 'superadmin', 'owner'].includes(role)) {
+        return { error: "Accès refusé. Réservé aux administrateurs autorisés." }
     }
 
     const supabase = await createAdminClient()
@@ -294,7 +294,7 @@ export async function updateLoanStatus(loanId: string, status: 'approved' | 'rej
 
 export async function updateRepaymentStatus(repaymentId: string, status: 'verified' | 'rejected') {
     const role = await getCurrentUserRole()
-    if (!role || !['admin_repayment', 'superadmin', 'admin_comptable'].includes(role)) {
+    if (!role || !['admin_repayment', 'superadmin', 'admin_comptable', 'owner'].includes(role)) {
         return { error: "Accès refusé." }
     }
 
@@ -402,8 +402,8 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
 
 export async function activateSubscription(subId: string) {
     const role = await getCurrentUserRole()
-    if (!role || role !== 'superadmin') {
-        return { error: `Accès refusé. Seul le Super Admin peut activer des abonnements. (Votre rôle: ${role || 'Aucun'})` }
+    if (!role || !['superadmin', 'owner'].includes(role)) {
+        return { error: `Accès refusé. Seul le Super Admin ou le Propriétaire peut activer des abonnements.` }
     }
 
     const supabase = await createAdminClient()
@@ -465,7 +465,7 @@ export async function activateSubscription(subId: string) {
 
 export async function rejectSubscription(subId: string, reason: string) {
     const role = await getCurrentUserRole()
-    if (!role || role !== 'superadmin') {
+    if (!role || !['superadmin', 'owner'].includes(role)) {
         return { error: "Accès refusé." }
     }
 
@@ -495,8 +495,8 @@ export async function rejectSubscription(subId: string, reason: string) {
 
 export async function deleteUserSecurely(userId: string) {
     const role = await getCurrentUserRole()
-    if (!role || role !== 'superadmin') {
-        return { error: "Accès refusé. Réservé au Super Admin." }
+    if (!role || !['superadmin', 'owner'].includes(role)) {
+        return { error: "Accès refusé. Action réservée à la haute direction." }
     }
 
     const { createAdminClient } = await import('@/utils/supabase/server')
@@ -556,7 +556,7 @@ export async function deleteUserSecurely(userId: string) {
 
 export async function searchUsersWithNameOrEmail(query: string) {
     const role = await getCurrentUserRole()
-    if (!role || !['admin_loan', 'admin_repayment', 'superadmin', 'admin_comptable'].includes(role)) {
+    if (!role || !['admin_loan', 'admin_repayment', 'superadmin', 'admin_comptable', 'owner'].includes(role)) {
         return []
     }
 
@@ -573,7 +573,7 @@ export async function searchUsersWithNameOrEmail(query: string) {
 
 export async function getActiveLoansForUser(userId: string) {
     const role = await getCurrentUserRole()
-    if (!role || !['admin_repayment', 'superadmin', 'admin_comptable'].includes(role)) {
+    if (!role || !['admin_repayment', 'superadmin', 'admin_comptable', 'owner'].includes(role)) {
         return []
     }
 
@@ -590,7 +590,7 @@ export async function getActiveLoansForUser(userId: string) {
 
 export async function createDirectRepayment(formData: FormData) {
     const role = await getCurrentUserRole()
-    if (!role || (role !== 'superadmin' && role !== 'admin_comptable')) {
+    if (!role || !['superadmin', 'admin_comptable', 'owner'].includes(role)) {
         return { error: "Accès refusé. Action réservée aux administrateurs autorisés." }
     }
 

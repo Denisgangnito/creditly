@@ -41,7 +41,8 @@ export default function UserManagementTable({ rows }: { rows: Array<{ id: string
         { id: 'admin_loan', label: 'Admin Prêt' },
         { id: 'admin_repayment', label: 'Admin Remboursement' },
         { id: 'admin_comptable', label: 'Admin Comptable' },
-        { id: 'superadmin', label: 'Superadmin' }
+        { id: 'superadmin', label: 'Superadmin' },
+        { id: 'owner', label: 'Propriétaire' }
     ]
 
     const handleExecuteAction = async () => {

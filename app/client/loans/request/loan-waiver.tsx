@@ -6,6 +6,7 @@ import { CheckmarkFilled, Warning, Printer } from '@carbon/icons-react'
 import { useRef, useEffect } from 'react'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import { LoanPDFDocument } from './loan-pdf'
+import { numberToFrench } from '@/utils/formatters'
 
 interface WaiverProps {
     userData: {
@@ -25,6 +26,11 @@ interface WaiverProps {
     onConfirm: (personalData: PersonalData) => void;
     onBack: () => void;
     loading: boolean;
+    repaymentPhones: {
+        MTN: string;
+        Moov: string;
+        Celtiis: string;
+    };
 }
 
 export interface PersonalData {
@@ -35,7 +41,8 @@ export interface PersonalData {
     profession: string;
 }
 
-export default function LoanWaiver({ userData, loanData, onConfirm, onBack, loading }: WaiverProps) {
+export default function LoanWaiver({ userData, loanData, onConfirm, onBack, loading, repaymentPhones }: WaiverProps) {
+    const repaymentNumber = repaymentPhones[loanData.payoutNetwork as keyof typeof repaymentPhones] || repaymentPhones.MTN
     const [personalData, setPersonalData] = useState<PersonalData>({
         birthDate: userData.birth_date || '',
         address: userData.address || '',
@@ -69,96 +76,100 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
 
     return (
         <div className="space-y-8 animate-fade-in">
-            <div className="bg-slate-950 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl">
                 {/* Contract Header */}
-                <div className="p-8 border-b border-white/5 bg-slate-900/50">
-                    <h2 className="text-xl font-black text-white uppercase italic tracking-tighter text-center">
+                <div className="p-8 border-b border-slate-100 bg-slate-50">
+                    <h2 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter text-center">
                         CONTRAT DE PRÊT <br />
-                        <span className="text-blue-500">& ENGAGEMENT</span>
+                        <span className="text-blue-600">& ENGAGEMENT</span>
                     </h2>
-                    <p className="text-[10px] text-slate-500 font-bold text-center mt-2 uppercase tracking-widest italic">
+                    <p className="text-[10px] text-slate-400 font-bold text-center mt-2 uppercase tracking-widest italic">
                         Collaboration Creditly – Prêt sans intérêt
                     </p>
                 </div>
 
                 {/* Contract Body */}
-                <div className="p-8 space-y-6 text-slate-300 font-medium text-sm leading-relaxed max-h-[60vh] overflow-y-auto custom-scrollbar bg-slate-950">
+                <div className="p-8 space-y-6 text-slate-600 font-medium text-sm leading-relaxed max-h-[60vh] overflow-y-auto custom-scrollbar bg-white">
                     <div className="space-y-4">
                         <p>
-                            Je soussigné(e), Nom et prénom : <strong className="text-white italic">{userData.prenom} {userData.nom}</strong>
+                            Je soussigné(e), Nom et prénom : <strong className="text-slate-900 italic">{userData.prenom} {userData.nom}</strong>
                         </p>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-900/40 p-4 rounded-2xl border border-white/5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
                             <div className="space-y-1">
-                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Date de naissance</label>
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Date de naissance</label>
                                 <input
                                     type="date"
                                     value={personalData.birthDate}
                                     onChange={e => setPersonalData({ ...personalData, birthDate: e.target.value })}
-                                    className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
+                                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 outline-none focus:border-blue-500"
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Votre carte d'identité (Numéro)</label>
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Votre carte d'identité (Numéro)</label>
                                 <input
                                     type="text"
                                     placeholder="Ex: CNI 102930910"
                                     value={personalData.idDetails}
                                     onChange={e => setPersonalData({ ...personalData, idDetails: e.target.value })}
-                                    className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
+                                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 outline-none focus:border-blue-500"
                                 />
                             </div>
                             <div className="sm:col-span-2 space-y-1">
-                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Où habitez-vous ?</label>
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Où habitez-vous ?</label>
                                 <input
                                     type="text"
                                     placeholder="Quartier, Rue, Maison..."
                                     value={personalData.address}
                                     onChange={e => setPersonalData({ ...personalData, address: e.target.value })}
-                                    className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
+                                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 outline-none focus:border-blue-500"
                                 />
                             </div>
                             <div className="sm:col-span-2 space-y-1">
-                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Votre travail</label>
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Votre travail</label>
                                 <input
                                     type="text"
                                     placeholder="Ex: Enseignant, Commerçant..."
                                     value={personalData.profession}
                                     onChange={e => setPersonalData({ ...personalData, profession: e.target.value })}
-                                    className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
+                                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 outline-none focus:border-blue-500"
                                 />
                             </div>
                         </div>
 
                         <p>
-                            reconnais avoir reçu de <strong>Creditly</strong>, dans le cadre d’une collaboration privée, un prêt sans intérêt d’un montant de <strong className="text-white italic">{loanData.amount.toLocaleString()} FCFA</strong> auquel s'ajoutent des frais de dossier de <strong className="text-white italic">500 FCFA</strong>, soit un montant total de :
+                            reconnais avoir reçu de <strong>Creditly</strong>, dans le cadre d’une collaboration privée, un prêt sans intérêt d’un montant de <strong className="text-slate-900 italic">{loanData.amount.toLocaleString()} FCFA</strong> auquel s'ajoutent des frais de dossier de <strong className="text-slate-900 italic">500 FCFA</strong>, soit un montant total de :
                         </p>
 
-                        <div className="p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-between">
+                        <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-between">
                             <div>
-                                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Total à rembourser</p>
-                                <p className="text-lg font-black text-white italic">{totalToRepay.toLocaleString()} FCFA</p>
+                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Total à rembourser</p>
+                                <p className="text-lg font-black text-slate-900 italic">{totalToRepay.toLocaleString()} FCFA</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Écrit en lettres</p>
-                                <p className="text-xs font-bold text-white italic">{amountInWords} francs CFA</p>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Écrit en lettres</p>
+                                <p className="text-xs font-bold text-slate-700 italic">{amountInWords} francs CFA</p>
                             </div>
                         </div>
 
                         <p>
-                            Je reconnais que cette somme constitue une dette certaine, liquide et exigible et je m’engage à la rembourser en totalité, sans intérêt supplémentaire, au plus tard le :
-                            <strong className="text-white ml-2 italic">{loanData.dueDate}</strong>
+                            Je reconnais que cette somme constitue une de dette certaine, liquide et exigible et je m’engage à la rembourser en totalité, sans intérêt supplémentaire, au plus tard le :
+                            <strong className="text-slate-900 ml-2 italic">{loanData.dueDate}</strong>
                         </p>
 
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">POUR LE REMBOURSEMENT</h3>
                             <p>
-                                Opérateur : <strong className="text-white italic">{loanData.payoutNetwork}</strong> <br />
-                                Numéro : <strong className="text-white italic">{loanData.payoutPhone}</strong>
+                                Je m'engage à rembourser sur l'un des comptes officiels de <strong>Creditly</strong> : <br />
+                                Réseau : <strong className="text-slate-900 italic">{loanData.payoutNetwork}</strong> <br />
+                                Numéro de réception : <strong className="text-blue-600 italic font-black">{repaymentNumber}</strong>
                             </p>
-                            <p className="text-xs italic text-slate-400">
-                                Tout défaut ou retard de paiement pourra entraîner des démarches de recouvrement légales.
-                            </p>
+                            <div className="p-3 bg-red-50 border border-red-100 rounded-xl">
+                                <p className="text-[10px] font-black text-red-600 uppercase tracking-widest leading-none mb-1 italic">Règle sur les trop-perçus (Surplus)</p>
+                                <p className="text-[10px] text-slate-500 font-bold italic">
+                                    Tout versement supérieur au montant total dû est considéré comme une pénalité de traitement et ne sera pas remboursé ni crédité.
+                                </p>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
@@ -171,20 +182,20 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                             </p>
                         </div>
 
-                        <div className="pt-4 border-t border-white/5 grid grid-cols-2 gap-8 text-[10px]">
+                        <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-8 text-[10px]">
                             <div>
-                                <p className="font-black text-slate-500 uppercase tracking-widest mb-4 italic">Signé par le débiteur</p>
-                                <p className="text-xs font-black text-white italic">{userData.prenom} {userData.nom}</p>
-                                <p className="text-slate-500 mt-1 italic">Le {today}</p>
+                                <p className="font-black text-slate-400 uppercase tracking-widest mb-4 italic">Signé par le débiteur</p>
+                                <p className="text-xs font-black text-slate-900 italic">{userData.prenom} {userData.nom}</p>
+                                <p className="text-slate-400 mt-1 italic">Le {today}</p>
                             </div>
                             <div>
-                                <p className="font-black text-slate-500 uppercase tracking-widest mb-4 italic">Signé pour Creditly</p>
-                                <p className="text-xs font-black text-white italic">Direction Opérationnelle</p>
-                                <p className="text-slate-500 mt-1 italic">Approbation Directe</p>
+                                <p className="font-black text-slate-400 uppercase tracking-widest mb-4 italic">Signé pour Creditly</p>
+                                <p className="text-xs font-black text-slate-900 italic">Direction Opérationnelle</p>
+                                <p className="text-slate-400 mt-1 italic">Approbation Directe</p>
                             </div>
                         </div>
 
-                        <div className="bg-slate-900/60 p-4 rounded-xl text-[9px] text-slate-500 italic leading-snug">
+                        <div className="bg-slate-50 p-4 rounded-xl text-[9px] text-slate-400 italic leading-snug">
                             <p><strong>Politique de confidentialité – Micro-prêts Creditly :</strong> Les renseignements personnels recueillis sont utilisés uniquement pour la gestion du micro-prêt. Ils demeurent confidentiels et peuvent être communiqués uniquement lorsque requis par la loi ou dans le cadre de démarches légales de recouvrement. En cas de non-remboursement, Creditly se réserve le droit d’entreprendre toute action légale permise. Les frais raisonnables de recouvrement peuvent être réclamés au débiteur. Le présent document constitue un engagement contractuel exécutoire.</p>
                         </div>
                     </div>
@@ -245,6 +256,7 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                                     personalData={personalData}
                                     signature={signature}
                                     amountInWords={amountInWords}
+                                    repaymentNumber={repaymentNumber}
                                 />
                             }
                             fileName={`Contrat_Creditly_${userData.nom}_${new Date().getTime()}.pdf`}
@@ -333,7 +345,7 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                         </div>
 
                         <p className="text-justify">
-                            Je m'engage formellement et irrévocablement à rembourser l'intégralité de cette somme au profit de <strong>Creditly</strong>, par transfert via le réseau <strong>{loanData.payoutNetwork}</strong> au numéro référencé <strong>{loanData.payoutPhone}</strong>, au plus tard le :
+                            Je m'engage formellement et irrévocablement à rembourser l'intégralité de cette somme au profit de <strong>Creditly</strong>, par transfert via le réseau <strong>{loanData.payoutNetwork}</strong> au numéro référencé <strong>{repaymentNumber}</strong>, au plus tard le :
                             <strong className="underline ml-1">{loanData.dueDate}</strong>.
                         </p>
 
@@ -345,6 +357,7 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                                     <p>2. Tout retard excédant 48h après l'échéance pourra entraîner l'application de pénalités forfaitaires de recouvrement.</p>
                                     <p>3. Le présent document constitue un titre de créance permettant d'engager toute procédure de recouvrement légale nécessaire.</p>
                                     <p>4. La signature numérique apposée ci-dessous a la même valeur juridique qu'une signature manuscrite.</p>
+                                    <p>5. Tout versement supérieur au montant total dû est considéré comme une pénalité de traitement non-remboursable.</p>
                                 </div>
                             </div>
                         </div>
@@ -417,61 +430,3 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
     )
 }
 
-function numberToFrench(n: number): string {
-    const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
-    const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
-    const tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
-
-    if (n === 0) return 'zéro';
-
-    function convert(num: number): string {
-        if (num < 10) return units[num];
-        if (num < 20) return teens[num - 10];
-        if (num < 100) {
-            const ten = Math.floor(num / 10);
-            const unit = num % 10;
-            if (ten === 7) { // 70-79
-                if (unit === 0) return 'soixante-dix';
-                if (unit === 1) return 'soixante-et-onze';
-                return 'soixante-' + teens[unit];
-            }
-            if (ten === 9) { // 90-99
-                if (unit === 0) return 'quatre-vingt-dix';
-                return 'quatre-vingt-' + teens[unit];
-            }
-            if (unit === 0) { // 20, 30, 40, 50, 60, 80
-                if (ten === 8) return 'quatre-vingts'; // Special case for 80
-                return tens[ten];
-            }
-            if (unit === 1 && ten !== 8) return tens[ten] + '-et-un'; // 21, 31, 41, 51, 61
-            if (ten === 8) return 'quatre-vingt-' + units[unit]; // 81-89
-            return tens[ten] + '-' + units[unit];
-        }
-        if (num < 1000) {
-            const hundred = Math.floor(num / 100);
-            const remainder = num % 100;
-            let hundredText = '';
-            if (hundred === 1) {
-                hundredText = 'cent';
-            } else {
-                hundredText = units[hundred] + (remainder === 0 ? ' cents' : ' cent');
-            }
-            return remainder === 0 ? hundredText : hundredText + ' ' + convert(remainder);
-        }
-        if (num < 1000000) {
-            const thousand = Math.floor(num / 1000);
-            const remainder = num % 1000;
-            const thousandText = thousand === 1 ? 'mille' : convert(thousand) + ' mille';
-            return remainder === 0 ? thousandText : thousandText + ' ' + convert(remainder);
-        }
-        if (num < 1000000000) {
-            const million = Math.floor(num / 1000000);
-            const remainder = num % 1000000;
-            const millionText = million === 1 ? 'un million' : convert(million) + ' millions';
-            return remainder === 0 ? millionText : millionText + ' ' + convert(remainder);
-        }
-        return num.toString();
-    }
-
-    return convert(n).replace(/\s+/g, ' ').trim();
-}

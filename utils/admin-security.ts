@@ -56,8 +56,15 @@ export async function getCurrentUserRole(): Promise<UserRole | null> {
         .eq('id', user.id)
         .single()
 
-    const roles = profile?.roles as UserRole[]
-    return roles && roles.length > 0 ? roles[0] : null
+    const roles = (profile?.roles || []) as UserRole[]
+    if (roles.includes('owner')) return 'owner'
+    if (roles.includes('superadmin')) return 'superadmin'
+    if (roles.includes('admin_comptable')) return 'admin_comptable'
+    if (roles.includes('admin_loan')) return 'admin_loan'
+    if (roles.includes('admin_repayment')) return 'admin_repayment'
+    if (roles.includes('admin_kyc')) return 'admin_kyc'
+
+    return roles.length > 0 ? roles[0] : null
 }
 
 export async function getCurrentUserRoles(): Promise<UserRole[]> {
