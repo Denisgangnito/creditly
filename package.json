@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@carbon/icons-react": "^11.70.0",
+    "@react-pdf/renderer": "^4.3.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.86.0",
     "@tailwindcss/cli": "^4.1.18",

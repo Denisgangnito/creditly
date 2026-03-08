@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
+import Link from 'next/link'
+import { CheckmarkOutline } from '@carbon/icons-react'
 import RepaymentForm from './repayment-form'
-// import { Tile } from '@carbon/react' (Disabled)
 
 export default async function RepaymentPage({
     searchParams
@@ -11,6 +12,9 @@ export default async function RepaymentPage({
     const loanIdParam = params.loanId
 
     const supabase = await createClient()
+    // Lazy update of system statuses
+    await supabase.rpc('auto_update_system_statuses')
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return <div>Connectez-vous</div>
 
@@ -27,11 +31,29 @@ export default async function RepaymentPage({
 
     const { data: loan } = await query.maybeSingle()
 
+    const { data: rawSettings } = await supabase
+        .from('system_settings')
+        .select('key, value')
+        .in('key', ['repayment_phone_mtn', 'repayment_phone_moov', 'repayment_phone_celtiis'])
+
+    const settingsMap = Object.fromEntries(rawSettings?.map((s: any) => [s.key, s.value]) || [])
+    const phoneMTN = settingsMap['repayment_phone_mtn'] || '+229 01 53 32 44 90'
+    const phoneMOOV = settingsMap['repayment_phone_moov'] || '+229 01 58 69 14 05'
+    const phoneCELTIIS = settingsMap['repayment_phone_celtiis'] || '+229 01 44 14 00 67'
+
     if (!loan) {
         return (
-            <div className="p-8 text-center">
-                <h1 className="text-3xl font-bold mb-4">Remboursement</h1>
-                <p>Vous n&apos;avez aucun prêt actif à rembourser.</p>
+            <div className="p-8 text-center pt-24 min-h-screen bg-slate-950">
+                <div className="max-w-md mx-auto space-y-6">
+                    <div className="w-20 h-20 bg-blue-600/10 text-blue-500 rounded-3xl flex items-center justify-center mx-auto border border-blue-500/20">
+                        <CheckmarkOutline size={40} />
+                    </div>
+                    <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter">Tout est <span className="premium-gradient-text uppercase">réglé.</span></h1>
+                    <p className="text-slate-500 font-bold italic">Vous n&apos;avez aucun prêt actif à rembourser pour le moment.</p>
+                    <Link href="/client/dashboard">
+                        <button className="premium-button px-8">Retour au Dashboard</button>
+                    </Link>
+                </div>
             </div>
         )
     }
@@ -83,15 +105,15 @@ export default async function RepaymentPage({
                         <div className="space-y-3">
                             <div className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">MTN Dépôt</span>
-                                <span className="text-sm font-black text-white tracking-widest">+229 01 53 32 44 90</span>
+                                <span className="text-sm font-black text-white tracking-widest">{phoneMTN}</span>
                             </div>
                             <div className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">CELTICS</span>
-                                <span className="text-sm font-black text-white tracking-widest">+229 01 44 14 00 67</span>
+                                <span className="text-sm font-black text-white tracking-widest">{phoneCELTIIS}</span>
                             </div>
                             <div className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">MOOV</span>
-                                <span className="text-sm font-black text-white tracking-widest">+229 01 58 69 14 05</span>
+                                <span className="text-sm font-black text-white tracking-widest">{phoneMOOV}</span>
                             </div>
                         </div>
                     </div>

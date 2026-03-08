@@ -10,7 +10,7 @@ export default async function SuperAdminPage({
     searchParams: Promise<{ month?: string; year?: string; week?: string }>
 }) {
     // Security Check - STRICT SUPERADMIN
-    await requireAdminRole(['superadmin'])
+    await requireAdminRole(['superadmin', 'admin_comptable'])
 
     const params = await searchParams
     const month = params.month ? parseInt(params.month) : new Date().getMonth() + 1
@@ -124,8 +124,8 @@ export default async function SuperAdminPage({
     // On récupère tous les admins
     const { data: admins } = await supabase
         .from('users')
-        .select('id, nom, prenom, role, whatsapp')
-        .in('role', ['admin_kyc', 'admin_loan', 'admin_repayment', 'superadmin'])
+        .select('id, nom, prenom, roles, whatsapp')
+        .overlaps('roles', ['admin_kyc', 'admin_loan', 'admin_repayment', 'superadmin', 'admin_comptable'])
 
     // On agrège leurs actions
     const kycActions = await supabase.from('kyc_submissions').select('admin_id, status').not('admin_id', 'is', null)
@@ -133,23 +133,20 @@ export default async function SuperAdminPage({
     const repaymentActions = await supabase.from('remboursements').select('admin_id, status').not('admin_id', 'is', null)
     // Removed subscription actions from audit as per request
 
-    const adminPerformance = admins?.map(admin => {
+    const adminPerformance = admins?.map((admin: any) => {
         const kycCount = kycActions.data?.filter(a => a.admin_id === admin.id).length || 0
         const loanCount = loanActions.data?.filter(a => a.admin_id === admin.id).length || 0
         const repaymentCount = repaymentActions.data?.filter(a => a.admin_id === admin.id).length || 0
-        // const subCount = subActions.data?.filter(a => a.admin_id === admin.id).length || 0
         return {
             ...admin,
-            totalActions: kycCount + loanCount + repaymentCount, // Adjusted total
-            details: { kycCount, loanCount, repaymentCount } // Adjusted details
+            totalActions: kycCount + loanCount + repaymentCount,
+            details: { kycCount, loanCount, repaymentCount }
         }
-    }).sort((a, b) => b.totalActions - a.totalActions)
-
-    const totalSurplusBalance = admins?.reduce((acc, a) => acc + (Number((a as any).surplus_balance) || 0), 0) || 0; // Wait, I need to fetch all users actually, not just admins
+    }).sort((a: any, b: any) => b.totalActions - a.totalActions)
 
     // Correcting surplus fetch (all users)
     const { data: allUsersFinance } = await supabase.from('users').select('surplus_balance')
-    const totalGlobalSurplus = allUsersFinance?.reduce((acc, u) => acc + (Number(u.surplus_balance) || 0), 0) || 0
+    const totalGlobalSurplus = allUsersFinance?.reduce((acc: number, u: any) => acc + (Number(u.surplus_balance) || 0), 0) || 0
 
     return (
         <div className="py-10 md:py-16 animate-fade-in">

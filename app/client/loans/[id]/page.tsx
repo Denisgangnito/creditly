@@ -7,6 +7,8 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
     const params = await props.params;
     const { id } = params;
     const supabase = await createClient()
+    // Lazy update of system statuses
+    await supabase.rpc('auto_update_system_statuses')
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return redirect('/auth/login')

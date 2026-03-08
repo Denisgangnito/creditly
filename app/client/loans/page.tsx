@@ -5,6 +5,8 @@ import { ArrowLeft } from '@carbon/icons-react'
 
 export default async function ClientLoansPage() {
     const supabase = await createClient()
+    // Lazy update of system statuses
+    await supabase.rpc('auto_update_system_statuses')
 
     const {
         data: { user },

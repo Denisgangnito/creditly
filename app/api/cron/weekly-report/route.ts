@@ -25,9 +25,9 @@ export async function GET(request: Request) {
         // Recovering schema context: public.remboursements had date? Schema not fully visible.
         // Assuming 'date' field exists or 'created_at'. Let's use created_at for simplicity if date is manual.
         const { data: weeklyRepayments } = await supabase
-            .from('remboursements') // Table name likely 'remboursements' based on context or 'repayments'
-            .select('amount')
-            .gte('date', oneWeekAgo.toISOString())
+            .from('remboursements')
+            .select('amount_declared')
+            .gte('created_at', oneWeekAgo.toISOString())
             .eq('status', 'verified');
 
         // 3. Monthly Totals
@@ -39,8 +39,8 @@ export async function GET(request: Request) {
 
         const { data: monthlyRepayments } = await supabase
             .from('remboursements')
-            .select('amount')
-            .gte('date', startOfMonth.toISOString())
+            .select('amount_declared')
+            .gte('created_at', startOfMonth.toISOString())
             .eq('status', 'verified');
 
 
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
         const sumParams = (arr: any[], key: string) => arr?.reduce((acc, curr) => acc + (curr[key] || 0), 0) || 0;
 
         const subRevenue = sumParams(weeklySubs || [], 'amount_paid');
-        const repaymentRevenue = sumParams(weeklyRepayments || [], 'amount');
+        const repaymentRevenue = sumParams(weeklyRepayments || [], 'amount_declared');
         const totalRevenue = subRevenue; // Revenue = Only Subscriptions
 
         const monthlySubRevenue = sumParams(monthlySubs || [], 'amount_paid');

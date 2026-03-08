@@ -6,15 +6,18 @@ import { checkGlobalQuotasStatus } from '@/utils/quotas-server'
 
 export default async function SubscriptionsPage() {
     const supabase = await createClient()
+    // Lazy update of system statuses
+    await supabase.rpc('auto_update_system_statuses')
+
     const { data: plans } = await supabase.from('abonnements').select('*').order('price')
     const quotasStatus = await checkGlobalQuotasStatus()
 
     const { data: { user } } = await supabase.auth.getUser()
-    const { data: allSubs } = user ? await supabase.from('user_subscriptions').select('*, plan:abonnements(*)').eq('user_id', user.id) : { data: [] }
+    const { data: allSubs } = user ? await supabase.from('user_subscriptions').select('*, plan:abonnements(*)').eq('user_id', user.id).order('created_at', { ascending: false }) : { data: [] }
 
     const now = new Date().toISOString()
     const activeSub = allSubs?.find((s: any) => s.status === 'active' && s.end_date && s.end_date > now)
-    const expiredSub = !activeSub ? allSubs?.find((s: any) => s.status === 'expired' || (s.status === 'active' && s.end_date && s.end_date <= now)) : null
+    const expiredSub = !activeSub ? allSubs?.find((s: any) => (s.status === 'expired' || s.status === 'active') && s.end_date && s.end_date <= now) : null
     const pendingSub = allSubs?.find((s: any) => s.status === 'pending')
     const rejectedSub = allSubs?.find((s: any) => s.status === 'rejected')
 

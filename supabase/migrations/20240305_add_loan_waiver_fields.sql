@@ -11,7 +11,22 @@ ADD COLUMN IF NOT EXISTS borrower_birth_date date,
 ADD COLUMN IF NOT EXISTS borrower_address text,
 ADD COLUMN IF NOT EXISTS borrower_city text,
 ADD COLUMN IF NOT EXISTS borrower_id_details text,
-ADD COLUMN IF NOT EXISTS waiver_signed_at timestamptz DEFAULT now();
+ADD COLUMN IF NOT EXISTS borrower_profession text,
+ADD COLUMN IF NOT EXISTS waiver_signed_at timestamptz DEFAULT now(),
+ADD COLUMN IF NOT EXISTS service_fee numeric DEFAULT 500;
+
+-- Create admin_commissions table
+CREATE TABLE IF NOT EXISTS public.admin_commissions (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    loan_id uuid REFERENCES public.prets(id) ON DELETE CASCADE,
+    admin_id uuid REFERENCES public.users(id),
+    amount numeric NOT NULL,
+    type text NOT NULL, -- 'kyc_reward' or 'loan_reward'
+    created_at timestamptz DEFAULT now()
+);
+
+-- Index for performance
+CREATE INDEX IF NOT EXISTS idx_commissions_admin ON public.admin_commissions(admin_id);
 
 -- 3. Update the RPC function to accept and store these values
 -- Note: We add them with DEFAULT NULL to maintain backward compatibility if any, 
@@ -105,7 +120,8 @@ BEGIN
     borrower_city,
     borrower_id_details,
     borrower_profession,
-    waiver_signed_at
+    waiver_signed_at,
+    service_fee
   )
   values (
     v_user_id,
@@ -120,7 +136,8 @@ BEGIN
     p_city,
     p_id_details,
     p_profession,
-    now()
+    now(),
+    500
   )
   returning id into v_new_loan_id;
 

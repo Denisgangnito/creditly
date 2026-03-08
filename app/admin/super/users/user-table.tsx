@@ -1,20 +1,31 @@
 'use client'
 
 import React, { useState } from 'react'
-import { updateUserRole, deleteUserAccount, blacklistUserAccount } from './actions'
-import { TrashCan, User, Switcher, Misuse, InformationFilled } from '@carbon/icons-react'
+import { updateUserRoles, deleteUserAccount, blacklistUserAccount } from './actions'
+import { TrashCan, User, CheckmarkFilled, Misuse, InformationFilled, ChevronDown } from '@carbon/icons-react'
 import ConfirmModal from '@/app/components/ui/ConfirmModal'
 import Link from 'next/link'
 
-export default function UserManagementTable({ rows }: { rows: Array<{ id: string; name: string; email: string; is_active: boolean; role: string; whatsapp?: string; has_active_loans?: boolean; surplus_balance?: number; debt?: number }> }) {
+export default function UserManagementTable({ rows }: { rows: Array<{ id: string; name: string; email: string; is_active: boolean; roles: string[]; whatsapp?: string; has_active_loans?: boolean; surplus_balance?: number; debt?: number }> }) {
     const [loading, setLoading] = useState<string | null>(null)
     const [processingId, setProcessingId] = useState<string | null>(null)
     const [confirmAction, setConfirmAction] = useState<{ id: string, email: string, type: 'delete' | 'blacklist', hasLoans?: boolean } | null>(null)
     const [errorAction, setErrorAction] = useState<{ title: string, message: string } | null>(null)
 
-    const handleRoleChange = async (userId: string, newRole: string) => {
+    const handleToggleRole = async (userId: string, currentRoles: string[], roleToToggle: string) => {
+        let newRoles: string[]
+        if (currentRoles.includes(roleToToggle)) {
+            // Remove role (but keep at least one if it's the last one? No, let's trust admin)
+            newRoles = currentRoles.filter(r => r !== roleToToggle)
+        } else {
+            // Add role
+            newRoles = [...currentRoles, roleToToggle]
+        }
+
+        if (newRoles.length === 0) newRoles = ['client'] // Default fallback
+
         setLoading(userId)
-        const result = await updateUserRole(userId, newRole as any)
+        const result = await updateUserRoles(userId, newRoles as any)
         if (result?.error) {
             setErrorAction({
                 title: "Erreur de Privilège",
@@ -23,6 +34,15 @@ export default function UserManagementTable({ rows }: { rows: Array<{ id: string
         }
         setLoading(null)
     }
+
+    const availableRoles = [
+        { id: 'client', label: 'Client' },
+        { id: 'admin_kyc', label: 'Admin KYC' },
+        { id: 'admin_loan', label: 'Admin Prêt' },
+        { id: 'admin_repayment', label: 'Admin Remboursement' },
+        { id: 'admin_comptable', label: 'Admin Comptable' },
+        { id: 'superadmin', label: 'Superadmin' }
+    ]
 
     const handleExecuteAction = async () => {
         if (!confirmAction) return
@@ -107,20 +127,24 @@ export default function UserManagementTable({ rows }: { rows: Array<{ id: string
                                     )}
                                 </td>
                                 <td className="px-8 py-6">
-                                    <div className="relative inline-block">
-                                        <select
-                                            defaultValue={row.role}
-                                            disabled={loading === row.id || !!processingId}
-                                            onChange={(e) => handleRoleChange(row.id, e.target.value)}
-                                            className="bg-slate-900 border border-white/5 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 outline-none focus:border-blue-500/50 transition-all appearance-none cursor-pointer pr-10 hover:bg-slate-800"
-                                        >
-                                            <option value="client">Client</option>
-                                            <option value="admin_kyc">Admin KYC</option>
-                                            <option value="admin_loan">Admin Prêt</option>
-                                            <option value="admin_repayment">Admin Remboursement</option>
-                                            <option value="superadmin">Superadmin</option>
-                                        </select>
-                                        <Switcher size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
+                                    <div className="relative group/roles">
+                                        <button className="flex items-center gap-2 bg-slate-900 border border-white/5 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:bg-slate-800 transition-all">
+                                            {row.roles.length} Rôle(s) <ChevronDown size={14} />
+                                        </button>
+
+                                        <div className="absolute left-0 top-full mt-2 w-48 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover/roles:opacity-100 group-hover/roles:visible transition-all z-20 p-2 space-y-1">
+                                            {availableRoles.map(role => (
+                                                <button
+                                                    key={role.id}
+                                                    onClick={() => handleToggleRole(row.id, row.roles, role.id)}
+                                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${row.roles.includes(role.id) ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'}`}
+                                                >
+                                                    {role.label}
+                                                    {row.roles.includes(role.id) && <CheckmarkFilled size={14} />}
+                                                </button>
+                                            ))}
+                                        </div>
+
                                         {loading === row.id && (
                                             <div className="absolute -right-8 top-1/2 -translate-y-1/2">
                                                 <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent animate-spin rounded-full"></div>
@@ -214,19 +238,16 @@ export default function UserManagementTable({ rows }: { rows: Array<{ id: string
                             <div className="flex justify-between items-end">
                                 <div className="space-y-2">
                                     <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic">Privilèges</p>
-                                    <div className="relative">
-                                        <select
-                                            defaultValue={row.role}
-                                            onChange={(e) => handleRoleChange(row.id, e.target.value)}
-                                            className="bg-slate-800 border border-white/5 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white outline-none appearance-none pr-10"
-                                        >
-                                            <option value="client">Client</option>
-                                            <option value="admin_kyc">Admin KYC</option>
-                                            <option value="admin_loan">Admin Prêt</option>
-                                            <option value="admin_repayment">Admin Remboursement</option>
-                                            <option value="superadmin">Superadmin</option>
-                                        </select>
-                                        <Switcher size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                    <div className="flex flex-wrap gap-2">
+                                        {availableRoles.map(role => (
+                                            <button
+                                                key={role.id}
+                                                onClick={() => handleToggleRole(row.id, row.roles, role.id)}
+                                                className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all border ${row.roles.includes(role.id) ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-white/5 text-slate-500'}`}
+                                            >
+                                                {role.label}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
                                 {row.whatsapp && (

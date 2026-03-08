@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { requireAdminRole } from '@/utils/admin-security'
 import AdminRepaymentTable from './repayment-table'
+import AdminCreateRepaymentWrapper from './AdminCreateRepaymentWrapper'
 import Link from 'next/link'
 
 export default async function AdminRepaymentPage({
@@ -12,7 +13,7 @@ export default async function AdminRepaymentPage({
     const statusFilter = params.status || 'pending'
 
     // Security Check
-    await requireAdminRole(['admin_repayment', 'superadmin'])
+    const { role } = await requireAdminRole(['admin_repayment', 'superadmin', 'admin_comptable'])
 
     const supabase = await createClient()
 
@@ -56,20 +57,23 @@ export default async function AdminRepaymentPage({
                         <p className="text-slate-500 font-bold mt-2 italic leading-relaxed">Vérification des preuves de paiement et clôture des dossiers</p>
                     </div>
 
-                    <div className="flex bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-xl">
-                        {[
-                            { label: 'En attente', val: 'pending' },
-                            { label: 'Validés', val: 'verified' },
-                            { label: 'Rejetés', val: 'rejected' }
-                        ].map(tab => (
-                            <Link
-                                key={tab.val}
-                                href={`/admin/repayments?status=${tab.val}`}
-                                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === tab.val ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-                            >
-                                {tab.label}
-                            </Link>
-                        ))}
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <AdminCreateRepaymentWrapper isAdmin={role === 'superadmin' || role === 'admin_comptable'} />
+                        <div className="flex bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-xl">
+                            {[
+                                { label: 'En attente', val: 'pending' },
+                                { label: 'Validés', val: 'verified' },
+                                { label: 'Rejetés', val: 'rejected' }
+                            ].map(tab => (
+                                <Link
+                                    key={tab.val}
+                                    href={`/admin/repayments?status=${tab.val}`}
+                                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === tab.val ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                                >
+                                    {tab.label}
+                                </Link>
+                            ))}
+                        </div>
                     </div>
                 </div>
 

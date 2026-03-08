@@ -168,6 +168,10 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData }
                         <p className="text-[8px] font-black text-slate-700 uppercase tracking-[0.2em] italic">Min: 1,000</p>
                         <p className="text-[8px] font-black text-slate-700 uppercase tracking-[0.2em] italic">Max: {subscription.plan.max_loan_amount.toLocaleString()}</p>
                     </div>
+                    <div className="mt-2 p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex justify-between items-center">
+                        <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest italic">Frais de dossier (Fixe)</p>
+                        <p className="text-sm font-black text-white italic">+ 500 F</p>
+                    </div>
 
                 </div>
 

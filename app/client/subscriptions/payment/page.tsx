@@ -21,6 +21,15 @@ export default async function PaymentPage({
 
     if (!plan) redirect('/client/subscriptions')
 
+    // Fetch Payment Number from Settings
+    const { data: settings } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'subscription_phone')
+        .single()
+
+    const paymentPhone = settings?.value || '+229 01 69 46 30 04'
+
     return (
         <div className="py-12 md:py-24 page-transition">
             <div className="main-container max-w-4xl">
@@ -45,7 +54,7 @@ export default async function PaymentPage({
                             <div className="space-y-6">
                                 <div>
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Numéro de dépôt (Momo)</p>
-                                    <p className="text-3xl font-black text-white tracking-widest italic selection:bg-blue-600">+229 01 69 46 30 04</p>
+                                    <p className="text-3xl font-black text-white tracking-widest italic selection:bg-blue-600">{paymentPhone}</p>
                                 </div>
                                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2">
                                     <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-2">

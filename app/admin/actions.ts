@@ -214,6 +214,54 @@ export async function updateLoanStatus(loanId: string, status: 'approved' | 'rej
 
             updates.due_date = activeSub.end_date
             updates.status = 'active'
+
+            // --- COMMISSION SHARING LOGIC ---
+            // 1. Get KYC Admin for this user
+            const { data: kyc } = await supabase
+                .from('kyc_submissions')
+                .select('admin_id')
+                .eq('user_id', loan.user_id)
+                .single()
+
+            const kycAdminId = kyc?.admin_id
+            const loanAdminId = adminId
+
+            if (kycAdminId || loanAdminId) {
+                const commissions = []
+                const feeShare = 100 // 100 for KYC, 100 for Loan, 100 for Repayment (later)
+
+                if (kycAdminId && loanAdminId && kycAdminId === loanAdminId) {
+                    // One person did both, they get 200 (KYC + Loan parts)
+                    commissions.push({
+                        loan_id: loanId,
+                        admin_id: kycAdminId,
+                        amount: 200,
+                        type: 'kyc_and_loan_reward'
+                    })
+                } else {
+                    if (kycAdminId) {
+                        commissions.push({
+                            loan_id: loanId,
+                            admin_id: kycAdminId,
+                            amount: feeShare,
+                            type: 'kyc_reward'
+                        })
+                    }
+                    if (loanAdminId) {
+                        commissions.push({
+                            loan_id: loanId,
+                            admin_id: loanAdminId,
+                            amount: feeShare,
+                            type: 'loan_reward'
+                        })
+                    }
+                }
+
+                if (commissions.length > 0) {
+                    await supabase.from('admin_commissions').insert(commissions)
+                }
+            }
+            // --- END COMMISSION SHARING ---
         }
     }
 
@@ -238,12 +286,15 @@ export async function updateLoanStatus(loanId: string, status: 'approved' | 'rej
     }
 
     revalidatePath('/admin/loans')
+    revalidatePath('/client/dashboard')
+    revalidatePath('/client/loans')
+    revalidatePath('/client/loans/request')
     return { success: true }
 }
 
 export async function updateRepaymentStatus(repaymentId: string, status: 'verified' | 'rejected') {
     const role = await getCurrentUserRole()
-    if (!role || !['admin_repayment', 'superadmin'].includes(role)) {
+    if (!role || !['admin_repayment', 'superadmin', 'admin_comptable'].includes(role)) {
         return { error: "Accès refusé." }
     }
 
@@ -271,11 +322,11 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
     // 3. Update Loan Balance if Verified
     if (status === 'verified') {
         const amountVerified = repayment.amount_declared
-        const { data: loan } = await supabase.from('prets').select('amount, amount_paid').eq('id', repayment.loan_id).single()
+        const { data: loan } = await supabase.from('prets').select('amount, amount_paid, service_fee').eq('id', repayment.loan_id).single()
 
         if (loan) {
             const currentPaid = Number(loan.amount_paid) || 0
-            const totalLoanAmount = Number(loan.amount)
+            const totalLoanAmount = Number(loan.amount) + (Number(loan.service_fee) || 0)
             const remainingToPay = Math.max(0, totalLoanAmount - currentPaid)
 
             let amountAppliedToLoan = amountVerified
@@ -306,7 +357,7 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
                     .update({ surplus_amount: surplusGenerated })
                     .eq('id', repaymentId)
 
-                // Ajouter au solde surplus de l'utilisateur
+                // Mettre à jour le solde surplus de l'utilisateur
                 const { data: userData } = await supabase.from('users').select('surplus_balance').eq('id', repayment.user_id).single()
                 const currentSurplus = Number(userData?.surplus_balance) || 0
                 await supabase
@@ -314,6 +365,24 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
                     .update({ surplus_balance: currentSurplus + surplusGenerated })
                     .eq('id', repayment.user_id)
             }
+
+            // --- REPAYMENT COMMISSION ---
+            // On donne 100 F à celui qui valide le remboursement (une seule fois par prêt pour éviter les abus)
+            const { count } = await supabase
+                .from('admin_commissions')
+                .select('*', { count: 'exact', head: true })
+                .eq('loan_id', repayment.loan_id)
+                .eq('type', 'repayment_reward')
+
+            if ((count || 0) === 0 && adminId) {
+                await supabase.from('admin_commissions').insert({
+                    loan_id: repayment.loan_id,
+                    admin_id: adminId,
+                    amount: 100,
+                    type: 'repayment_reward'
+                })
+            }
+            // --- END REPAYMENT COMMISSION ---
         }
     }
 
@@ -329,6 +398,11 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
     }
 
     revalidatePath('/admin/repayments')
+    revalidatePath('/admin/loans')
+    revalidatePath('/client/dashboard')
+    revalidatePath('/client/loans')
+    revalidatePath('/client/loans/repayment')
+    revalidatePath('/client/subscriptions')
     return { success: true }
 }
 
@@ -390,6 +464,8 @@ export async function activateSubscription(subId: string) {
     revalidatePath('/admin/super')
     revalidatePath('/admin/super/subscriptions')
     revalidatePath('/client/dashboard')
+    revalidatePath('/client/subscriptions')
+    revalidatePath('/client/loans/request')
     return { success: true }
 }
 
@@ -418,6 +494,8 @@ export async function rejectSubscription(subId: string, reason: string) {
     if (error) return { error: getUserFriendlyErrorMessage(error) }
     revalidatePath('/admin/super/subscriptions')
     revalidatePath('/client/dashboard')
+    revalidatePath('/client/subscriptions')
+    revalidatePath('/client/loans/request')
     return { success: true }
 }
 
@@ -480,4 +558,151 @@ export async function deleteUserSecurely(userId: string) {
         console.error("Delete User Error:", e)
         return { error: e.message || "Erreur lors de la suppression sécurisée." }
     }
+}
+
+export async function searchUsersWithNameOrEmail(query: string) {
+    const role = await getCurrentUserRole()
+    if (!role || !['admin_loan', 'admin_repayment', 'superadmin', 'admin_comptable'].includes(role)) {
+        return []
+    }
+
+    const { createClient } = await import('@/utils/supabase/server')
+    const supabase = await createClient()
+    const { data: users } = await supabase
+        .from('users')
+        .select('id, nom, prenom, email')
+        .or(`nom.ilike.%${query}%,prenom.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(10)
+
+    return users || []
+}
+
+export async function getActiveLoansForUser(userId: string) {
+    const role = await getCurrentUserRole()
+    if (!role || !['admin_repayment', 'superadmin', 'admin_comptable'].includes(role)) {
+        return []
+    }
+
+    const { createClient } = await import('@/utils/supabase/server')
+    const supabase = await createClient()
+    const { data: loans } = await supabase
+        .from('prets')
+        .select('*, plan:subscription_snapshot_id(name)')
+        .eq('user_id', userId)
+        .in('status', ['active', 'overdue'])
+
+    return loans || []
+}
+
+export async function createDirectRepayment(formData: FormData) {
+    const role = await getCurrentUserRole()
+    if (!role || (role !== 'superadmin' && role !== 'admin_comptable')) {
+        return { error: "Accès refusé. Action réservée aux administrateurs autorisés." }
+    }
+
+    const { createAdminClient, createClient: createClientAuth } = await import('@/utils/supabase/server')
+    const supabase = await createAdminClient()
+    const supabaseUser = await createClientAuth()
+    const { data: { user: adminUser } } = await supabaseUser.auth.getUser()
+    const adminId = adminUser?.id
+
+    const loanId = formData.get('loanId') as string
+    const userId = formData.get('userId') as string
+    const amount = Number(formData.get('amount'))
+    const proofFile = formData.get('proof') as File | null
+
+    if (!loanId || !userId || !amount) {
+        return { error: "Informations manquantes." }
+    }
+
+    // 1. Upload Proof if exists
+    let proofPath = "system/admin-direct-payment.png"
+    if (proofFile && proofFile.size > 0) {
+        const fileExt = proofFile.name.split('.').pop()
+        const fileName = `${userId}/admin_direct_${loanId}_${Date.now()}.${fileExt}`
+        const { error: uploadError } = await supabase.storage
+            .from('repayment-proofs')
+            .upload(fileName, proofFile)
+
+        if (uploadError) return { error: "Erreur lors de l'upload de la preuve." }
+        proofPath = fileName
+    }
+
+    // 2. Calculate Surplus before creating repayment
+    const { data: loan } = await supabase.from('prets').select('amount, amount_paid, service_fee').eq('id', loanId).single()
+    if (!loan) return { error: "Prêt introuvable." }
+
+    const currentPaid = Number(loan.amount_paid) || 0
+    const totalLoanAmount = Number(loan.amount) + (Number(loan.service_fee) || 0)
+    const remainingToPay = Math.max(0, totalLoanAmount - currentPaid)
+
+    let amountAppliedToLoan = amount
+    let surplusGenerated = 0
+
+    if (amount > remainingToPay) {
+        amountAppliedToLoan = remainingToPay
+        surplusGenerated = amount - remainingToPay
+    }
+
+    const { data: repayment, error: repError } = await supabase
+        .from('remboursements')
+        .insert({
+            loan_id: loanId,
+            user_id: userId,
+            amount_declared: amount,
+            surplus_amount: surplusGenerated,
+            proof_url: proofPath,
+            status: 'verified',
+            admin_id: adminId,
+            validated_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+    if (repError) return { error: getUserFriendlyErrorMessage(repError) }
+
+    // 3. Update Balance
+    const newTotalPaid = currentPaid + amountAppliedToLoan
+    const isFullyPaid = newTotalPaid >= totalLoanAmount
+
+    await supabase
+        .from('prets')
+        .update({
+            amount_paid: newTotalPaid,
+            status: isFullyPaid ? 'paid' : undefined
+        })
+        .eq('id', loanId)
+
+    if (surplusGenerated > 0) {
+        const { data: userData } = await supabase.from('users').select('surplus_balance').eq('id', userId).single()
+        const currentSurplus = Number(userData?.surplus_balance) || 0
+        await supabase
+            .from('users')
+            .update({ surplus_balance: currentSurplus + surplusGenerated })
+            .eq('id', userId)
+    }
+
+    // --- REPAYMENT COMMISSION (Direct) ---
+    const { count } = await supabase
+        .from('admin_commissions')
+        .select('*', { count: 'exact', head: true })
+        .eq('loan_id', loanId)
+        .eq('type', 'repayment_reward')
+
+    if ((count || 0) === 0 && adminId) {
+        await supabase.from('admin_commissions').insert({
+            loan_id: loanId,
+            admin_id: adminId,
+            amount: 100,
+            type: 'repayment_reward'
+        })
+    }
+    // --- END REPAYMENT COMMISSION ---
+
+    revalidatePath('/admin/repayments')
+    revalidatePath('/admin/loans')
+    revalidatePath('/client/dashboard')
+    revalidatePath('/client/loans')
+
+    return { success: true }
 }

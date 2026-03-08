@@ -7,22 +7,27 @@ import { checkGlobalQuotasStatus } from '@/utils/quotas-server'
 
 export default async function LoanRequestPage() {
     const supabase = await createClient()
+    // Lazy update of system statuses
+    await supabase.rpc('auto_update_system_statuses')
+
     const quotasStatus = await checkGlobalQuotasStatus()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return redirect('/auth/login')
 
-    // Check active subscription - More robust check
-    const { data: sub } = await supabase
+    const { data: userSubs } = await supabase
         .from('user_subscriptions')
         .select('*, plan:abonnements(*)')
         .eq('user_id', user.id)
-        .eq('status', 'active')
-        .eq('is_active', true)
-        .gt('end_date', new Date().toISOString())
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+
+    const now = new Date().toISOString()
+    const allSubs = userSubs || []
+
+    // Consistency check with dashboard logic
+    const sub = allSubs.find((sub: any) =>
+        sub.status === 'active' && sub.end_date && sub.end_date > now
+    )
 
     if (!sub) {
         return (

@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { ActionButton } from '@/app/components/ui/ActionButton'
 import { CheckmarkFilled, Warning, Printer } from '@carbon/icons-react'
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
+import { PDFDownloadLink } from '@react-pdf/renderer'
+import { LoanPDFDocument } from './loan-pdf'
 
 interface WaiverProps {
     userData: {
@@ -44,12 +46,18 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
     const [accepted, setAccepted] = useState(false)
     const [signature, setSignature] = useState('')
 
-    const amountInWords = numberToFrench(loanData.amount)
+    const totalToRepay = loanData.amount + 500
+    const amountInWords = numberToFrench(totalToRepay)
     const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
     const handlePrint = () => {
         window.print();
     }
+
+    const [isClient, setIsClient] = useState(false)
+    useEffect(() => {
+        setIsClient(true)
+    }, [])
 
     const userNom = (userData.nom || '').trim()
     const canSubmit = accepted &&
@@ -123,13 +131,13 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                         </div>
 
                         <p>
-                            reconnais avoir reçu de <strong>Creditly</strong>, dans le cadre d’une collaboration privée, un prêt sans intérêt d’un montant total de :
+                            reconnais avoir reçu de <strong>Creditly</strong>, dans le cadre d’une collaboration privée, un prêt sans intérêt d’un montant de <strong className="text-white italic">{loanData.amount.toLocaleString()} FCFA</strong> auquel s'ajoutent des frais de dossier de <strong className="text-white italic">500 FCFA</strong>, soit un montant total de :
                         </p>
 
                         <div className="p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-between">
                             <div>
-                                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Somme prêtée</p>
-                                <p className="text-lg font-black text-white italic">{loanData.amount.toLocaleString()} FCFA</p>
+                                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Total à rembourser</p>
+                                <p className="text-lg font-black text-white italic">{totalToRepay.toLocaleString()} FCFA</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Écrit en lettres</p>
@@ -138,7 +146,7 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                         </div>
 
                         <p>
-                            Je reconnais que cette somme constitue une dette certaine, liquide et exigible et je m’engage à la rembourser en totalité, sans intérêt, au plus tard le :
+                            Je reconnais que cette somme constitue une dette certaine, liquide et exigible et je m’engage à la rembourser en totalité, sans intérêt supplémentaire, au plus tard le :
                             <strong className="text-white ml-2 italic">{loanData.dueDate}</strong>
                         </p>
 
@@ -220,13 +228,34 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                 >
                     Retour
                 </button>
-                <button
-                    onClick={handlePrint}
-                    className="flex-1 py-4 px-6 bg-slate-900 text-blue-500 font-black uppercase italic tracking-widest rounded-2xl border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                >
-                    <Printer size={20} />
-                    Imprimer / PDF
-                </button>
+                <div className="flex-1 flex flex-col gap-2">
+                    <button
+                        onClick={handlePrint}
+                        className="w-full py-4 px-6 bg-slate-900 text-blue-500 font-black uppercase italic tracking-widest rounded-2xl border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    >
+                        <Printer size={20} />
+                        Imprimer
+                    </button>
+                    {isClient && (
+                        <PDFDownloadLink
+                            document={
+                                <LoanPDFDocument
+                                    userData={userData}
+                                    loanData={loanData}
+                                    personalData={personalData}
+                                    signature={signature}
+                                    amountInWords={amountInWords}
+                                />
+                            }
+                            fileName={`Contrat_Creditly_${userData.nom}_${new Date().getTime()}.pdf`}
+                            className="w-full py-2 px-6 bg-emerald-600/10 text-emerald-500 font-black text-[10px] uppercase italic tracking-widest rounded-xl border border-emerald-500/20 hover:bg-emerald-600 hover:text-white transition-all text-center"
+                        >
+                            {({ loading: pdfLoading }) =>
+                                pdfLoading ? 'Génération...' : 'Télécharger PDF Pro'
+                            }
+                        </PDFDownloadLink>
+                    )}
+                </div>
                 <ActionButton
                     onClick={() => onConfirm(personalData)}
                     disabled={!canSubmit}
@@ -247,72 +276,140 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
             </div>
 
             {/* Hidden Printable Version - Styled for Page Print */}
-            <div className="hidden print-only print:block text-black bg-white p-12 font-serif text-sm leading-relaxed" id="printable-waiver">
-                <div className="text-center mb-10 border-b-2 border-black pb-6">
-                    <h1 className="text-2xl font-bold uppercase mb-1">Creditly</h1>
-                    <p className="text-[10px] tracking-widest uppercase font-bold">Solutions de Financement Privées</p>
-                    <div className="mt-4 text-xl font-bold border-y border-black py-2">RECONNAISSANCE DE DETTE & DÉCHARGE DE RESPONSABILITÉ</div>
+            <div className="hidden print-only print:block text-[#1a1a1a] bg-white p-16 font-serif text-xs leading-relaxed max-w-[800px] mx-auto relative" id="printable-waiver">
+
+                {/* Background Watermark */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+                    <p className="text-[120px] font-black transform -rotate-45 border-[20px] border-black px-10">OFFICIEL</p>
                 </div>
 
-                <div className="space-y-6">
-                    <p>Je soussigné(e), <strong>{userData.prenom} {userData.nom}</strong>,</p>
-
-                    <div className="grid grid-cols-2 gap-4 border border-black p-4">
-                        <p>Né(e) le : <strong>{personalData.birthDate ? new Date(personalData.birthDate).toLocaleDateString('fr-FR') : '________________'}</strong></p>
-                        <p>ID : <strong>{personalData.idDetails || '________________'}</strong></p>
-                        <p className="col-span-2">Adresse : <strong>{personalData.address || '________________'}</strong></p>
-                        <p className="col-span-2">Profession : <strong>{personalData.profession || '________________'}</strong></p>
-                    </div>
-
-                    <p className="text-justify">
-                        Reconnais avoir reçu de la part de l'organisation <strong>Creditly</strong>, dans le cadre d'une collaboration de micro-financement privée, un prêt sans intérêt d'un montant total de :
-                    </p>
-
-                    <div className="text-center p-4 bg-gray-100 border-2 border-dashed border-gray-400 font-bold text-xl">
-                        {loanData.amount.toLocaleString()} FCFA <br />
-                        <span className="text-sm font-normal italic">({amountInWords} francs CFA)</span>
-                    </div>
-
-                    <p className="text-justify">
-                        Je reconnais que cette somme constitue une dette certaine, liquide et exigible. Je m'engage par la présente signature à la rembourser en totalité, sans aucun frais d'intérêt supplémentaire, au plus tard le :
-                        <strong className="underline ml-1">{loanData.dueDate}</strong>.
-                    </p>
-
-                    <p className="text-justify">
-                        <strong>Engagement de Remboursement :</strong> Le remboursement sera effectué via le réseau <strong>{loanData.payoutNetwork}</strong> au numéro <strong>{loanData.payoutPhone}</strong>. Tout défaut ou retard pourra entraîner des procédures de recouvrement conformément aux lois en vigueur.
-                    </p>
-
-                    <div className="space-y-2 mt-8">
-                        <p><strong>Décharge de Responsabilité :</strong> Le débiteur décharge Creditly de toute responsabilité autre que celle de la mise à disposition des fonds. Il accepte les conditions d'utilisation et de protection des données de la plateforme.</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-12 mt-16 pb-12">
-                        <div className="border-t border-black pt-2">
-                            <p className="font-bold underline mb-10">Signature du Débiteur :</p>
-                            <p className="italic font-serif text-lg">{signature || 'Digital Signature'}</p>
-                            <p className="text-[10px] text-gray-500 mt-2 italic">Fait à {personalData.city || 'Cotonou'}, le {today}</p>
+                {/* Header Section */}
+                <div className="flex justify-between items-start mb-12 border-b-2 border-black pb-8 relative z-10">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 bg-black text-white flex items-center justify-center font-black text-lg italic">C</div>
+                            <h1 className="text-2xl font-black tracking-tighter uppercase italic">Creditly<span className="text-gray-400">.</span></h1>
                         </div>
-                        <div className="border-t border-black pt-2">
-                            <p className="font-bold underline mb-10">Pour Creditly (Approbation) :</p>
-                            <div className="relative h-12">
-                                <span className="absolute transform -rotate-6 border-2 border-blue-900 text-blue-900 px-4 py-1 text-xs font-black uppercase opacity-60">CERTIFIÉ CONFORME</span>
+                        <p className="text-[8px] font-bold uppercase tracking-[0.3em] text-gray-500">Solutions de Micro-Crédit Instantané</p>
+                        <p className="text-[8px] text-gray-400">Secteur des Opérations Internationales • Digitale-Only Access</p>
+                    </div>
+                    <div className="text-right space-y-1">
+                        <p className="text-[10px] font-bold uppercase">Contrat N° {Math.random().toString(36).substring(7).toUpperCase()}</p>
+                        <p className="text-[10px] text-gray-500 italic">Émis le {today}</p>
+                        <div className="inline-block px-3 py-1 bg-gray-100 border border-gray-200 rounded mt-2">
+                            <p className="text-[8px] font-black uppercase tracking-widest text-gray-600">Document Certifié</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Title */}
+                <div className="text-center mb-12">
+                    <h2 className="text-xl font-bold uppercase underline underline-offset-8 decoration-1 mb-2">Engagement Unilatéral de Remboursement</h2>
+                    <p className="text-[10px] italic text-gray-500">Document à valeur contractuelle et exécutoire</p>
+                </div>
+
+                {/* Body Section */}
+                <div className="space-y-8 relative z-10">
+                    <div className="space-y-4">
+                        <p className="text-justify">
+                            Je soussigné(e), Monsieur/Madame <strong>{userData.prenom} {userData.nom}</strong>,
+                            demeurant au <strong>{personalData.address || '________________'}</strong>,
+                            dans la ville de <strong>{personalData.city || '________________'}</strong>,
+                            exerçant la profession de <strong>{personalData.profession || '________________'}</strong>,
+                            et titulaire de la pièce d'identité N° <strong>{personalData.idDetails || '________________'}</strong>.
+                        </p>
+
+                        <p className="text-justify">
+                            Reconnais par la présente, avoir contracté auprès de la plateforme <strong>Creditly</strong> un prêt de type "Avance sur Revenu" d'un montant de <strong>{loanData.amount.toLocaleString()} FCFA</strong> avec des frais de dossier fixes de <strong>500 FCFA</strong>, soit un montant total de :
+                        </p>
+
+                        <div className="flex justify-center my-8">
+                            <div className="border-2 border-black p-6 bg-gray-50 text-center min-w-[300px] shadow-sm">
+                                <p className="text-2xl font-black mb-1">{totalToRepay.toLocaleString()} FCFA</p>
+                                <p className="text-[10px] font-medium italic border-t border-gray-300 pt-2 text-gray-600 uppercase">
+                                    {(amountInWords + ' francs CFA').toUpperCase()}
+                                </p>
                             </div>
-                            <p className="text-[10px] text-gray-500 mt-2 italic">Validation Opérationnelle Digitale</p>
+                        </div>
+
+                        <p className="text-justify">
+                            Je m'engage formellement et irrévocablement à rembourser l'intégralité de cette somme au profit de <strong>Creditly</strong>, par transfert via le réseau <strong>{loanData.payoutNetwork}</strong> au numéro référencé <strong>{loanData.payoutPhone}</strong>, au plus tard le :
+                            <strong className="underline ml-1">{loanData.dueDate}</strong>.
+                        </p>
+
+                        <div className="grid grid-cols-1 gap-6 pt-8">
+                            <div className="p-4 border border-gray-200 bg-gray-50 space-y-2">
+                                <h3 className="text-[10px] font-black uppercase tracking-widest border-b border-gray-300 pb-1">Clauses et Engagements</h3>
+                                <div className="grid grid-cols-1 gap-3 text-[9px] text-gray-600 italic leading-snug">
+                                    <p>1. Le débiteur reconnaît que cette dette est certaine, liquide et exigible à l'échéance indiquée.</p>
+                                    <p>2. Tout retard excédant 48h après l'échéance pourra entraîner l'application de pénalités forfaitaires de recouvrement.</p>
+                                    <p>3. Le présent document constitue un titre de créance permettant d'engager toute procédure de recouvrement légale nécessaire.</p>
+                                    <p>4. La signature numérique apposée ci-dessous a la même valeur juridique qu'une signature manuscrite.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Signatures */}
+                    <div className="grid grid-cols-2 gap-20 mt-20">
+                        <div className="space-y-12">
+                            <div className="border-t border-black pt-2">
+                                <p className="font-bold text-[10px] uppercase mb-1">Le Débiteur (Signature)</p>
+                                <p className="text-[9px] text-gray-500 mb-6 italic">"Bon pour accord et engagement de remboursement"</p>
+                                <div className="h-16 flex items-end">
+                                    <p className="font-serif text-xl italic font-medium">{signature || userData.prenom + ' ' + userData.nom}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-12 relative">
+                            {/* Digital Stamp */}
+                            <div className="absolute top-0 right-0 transform translate-x-4 -translate-y-8 rotate-12 flex items-center justify-center pointer-events-none">
+                                <div className="w-24 h-24 border-[3px] border-blue-900/40 rounded-full flex flex-col items-center justify-center p-1">
+                                    <div className="w-full h-full border border-blue-900/40 rounded-full flex flex-col items-center justify-center text-center">
+                                        <p className="text-[7px] font-black text-blue-900/60 leading-none mb-1">CREDITLY.IO</p>
+                                        <div className="w-16 h-[1px] bg-blue-900/40 my-1"></div>
+                                        <p className="text-[8px] font-black text-blue-900/60 uppercase leading-none">APPROUVÉ</p>
+                                        <div className="w-16 h-[1px] bg-blue-900/40 my-1"></div>
+                                        <p className="text-[6px] font-bold text-blue-900/40">{new Date().getFullYear()}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="border-t border-black pt-2">
+                                <p className="font-bold text-[10px] uppercase mb-1">Pour Creditly (L'Organisation)</p>
+                                <p className="text-[9px] text-gray-500 mb-6 italic">Validation Digitale Sécurisée</p>
+                                <div className="h-16 flex items-end">
+                                    <div className="px-4 py-1 border-2 border-blue-900/60 text-blue-900/60 text-[9px] font-black uppercase rotate-[-5deg]">
+                                        Certification Automatique
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-20 text-[8px] text-gray-400 text-justify leading-tight italic border-t pt-2">
-                    Note : Ce document, généré électroniquement et signé via la plateforme Creditly, possède une valeur contractuelle pleine et entière entre les parties. En cas de litige, les tribunaux compétents seront ceux du siège de l'émetteur.
+                {/* Footer Info */}
+                <div className="mt-32 pt-4 border-t border-gray-200 text-center">
+                    <p className="text-[7px] text-gray-400 uppercase tracking-widest leading-relaxed">
+                        Creditly Finance Group • Document généré de manière électronique • 100% Digital Workflow <br />
+                        Toute reproduction sans le consentement du débiteur et de la plateforme est interdite.
+                    </p>
                 </div>
             </div>
 
             <style jsx global>{`
                 @media print {
+                    @page {
+                        margin: 0;
+                        size: auto;
+                    }
+                    body {
+                        background: white !important;
+                        -webkit-print-color-adjust: exact;
+                    }
                     .no-print { display: none !important; }
                     .print-only { display: block !important; }
-                    body { background: white !important; color: black !important; }
-                    .glass-panel { border: none !important; background: transparent !important; box-shadow: none !important; }
+                    .main-container, .admin-container { padding: 0 !important; max-width: none !important; margin: 0 !important; }
                 }
                 .print-only { display: none; }
             `}</style>
