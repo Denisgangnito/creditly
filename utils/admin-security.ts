@@ -13,11 +13,11 @@ export async function requireAdminRole(allowedRoles: UserRole[]) {
 
     const { data: profile } = await supabase
         .from('users')
-        .select('roles')
+        .select('role')
         .eq('id', user.id)
         .single()
 
-    const userRoles = (profile?.roles || []) as UserRole[]
+    const userRoles = profile?.role ? [profile.role as UserRole] : []
 
     // OWNER has absolute power: they satisfy ANY admin check
     const isOwner = userRoles.includes('owner')
@@ -52,12 +52,11 @@ export async function getCurrentUserRole(): Promise<UserRole | null> {
 
     const { data: profile } = await supabase
         .from('users')
-        .select('roles')
+        .select('role')
         .eq('id', user.id)
         .single()
 
-    const roles = profile?.roles as UserRole[]
-    return roles && roles.length > 0 ? roles[0] : null
+    return (profile?.role as UserRole) || null
 }
 
 export async function getCurrentUserRoles(): Promise<UserRole[]> {
@@ -67,9 +66,9 @@ export async function getCurrentUserRoles(): Promise<UserRole[]> {
 
     const { data: profile } = await supabase
         .from('users')
-        .select('roles')
+        .select('role')
         .eq('id', user.id)
         .single()
 
-    return (profile?.roles || []) as UserRole[]
+    return profile?.role ? [profile.role as UserRole] : []
 }

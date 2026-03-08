@@ -124,8 +124,8 @@ export default async function SuperAdminPage({
     // On récupère tous les admins
     const { data: admins } = await supabase
         .from('users')
-        .select('id, nom, prenom, roles, whatsapp')
-        .overlaps('roles', ['admin_kyc', 'admin_loan', 'admin_repayment', 'superadmin', 'admin_comptable'])
+        .select('id, nom, prenom, role, whatsapp')
+        .in('role', ['admin_kyc', 'admin_loan', 'admin_repayment', 'superadmin', 'admin_comptable', 'owner'])
 
     // On agrège leurs actions
     const kycActions = await supabase.from('kyc_submissions').select('admin_id, status').not('admin_id', 'is', null)
