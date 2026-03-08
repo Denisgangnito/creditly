@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     logo: {
-        backgroundColor: '#000',
+        backgroundColor: '#2563eb',
         color: '#fff',
         width: 30,
         height: 30,
@@ -51,6 +51,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 18,
         marginRight: 10,
+        borderRadius: 8,
+        fontStyle: 'italic',
     },
     title: {
         fontSize: 20,
