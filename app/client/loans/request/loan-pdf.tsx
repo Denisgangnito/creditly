@@ -233,100 +233,109 @@ interface LoanPDFProps {
     signature: string;
     amountInWords: string;
     repaymentNumber: string;
+    applicationDate: string;
 }
 
-export const LoanPDFDocument = ({ userData, loanData, personalData, signature, amountInWords, repaymentNumber }: LoanPDFProps) => (
-    <Document>
-        <Page size="A4" style={styles.page}>
-            <Text style={styles.watermark}>OFFICIEL</Text>
+export const LoanPDFDocument = ({ userData, loanData, personalData, signature, amountInWords, repaymentNumber, applicationDate }: LoanPDFProps) => {
+    // New fees apply only to loans requested on or after March 8, 2026
+    const FEE_START_DATE = new Date('2026-03-09T00:00:00');
+    const loanReqDate = new Date(applicationDate);
+    const hasFees = loanReqDate >= FEE_START_DATE;
+    const totalToRepay = hasFees ? loanData.amount + 500 : loanData.amount;
 
-            {/* Header */}
-            <View style={styles.header}>
-                <View>
-                    <View style={styles.logoContainer}>
-                        <Text style={styles.logo}>C</Text>
-                        <Text style={styles.title}>Creditly</Text>
+    return (
+        <Document>
+            <Page size="A4" style={styles.page}>
+                <Text style={styles.watermark}>OFFICIEL</Text>
+
+                {/* Header */}
+                <View style={styles.header}>
+                    <View>
+                        <View style={styles.logoContainer}>
+                            <Text style={styles.logo}>C</Text>
+                            <Text style={styles.title}>Creditly</Text>
+                        </View>
+                        <Text style={styles.subtitle}>Solutions de Micro-Crédit Instantané</Text>
                     </View>
-                    <Text style={styles.subtitle}>Solutions de Micro-Crédit Instantané</Text>
-                </View>
-                <View style={styles.contractInfo}>
-                    <Text style={styles.contractNumber}>Contrat N° {Math.random().toString(36).substring(7).toUpperCase()}</Text>
-                    <Text style={styles.date}>Émis le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
-                </View>
-            </View>
-
-            {/* Title */}
-            <Text style={styles.mainTitle}>Engagement Unilatéral de Remboursement</Text>
-
-            {/* Body */}
-            <View style={styles.section}>
-                <Text>
-                    Je soussigné(e), Monsieur/Madame <Text style={styles.bold}>{userData.prenom} {userData.nom}</Text>,
-                    demeurant au <Text style={styles.bold}>{personalData.address || '________________'}</Text>,
-                    dans la ville de <Text style={styles.bold}>{personalData.city || '________________'}</Text>,
-                    exerçant la profession de <Text style={styles.bold}>{personalData.profession || '________________'}</Text>,
-                    et titulaire de la pièce d'identité N° <Text style={styles.bold}>{personalData.idDetails || '________________'}</Text>.
-                </Text>
-            </View>
-
-            <View style={styles.section}>
-                <Text>
-                    Reconnais par la présente, avoir contracté auprès de la plateforme <Text style={styles.bold}>Creditly</Text> un prêt de type "Avance sur Revenu" d'un montant de <Text style={styles.bold}>{loanData.amount.toLocaleString()} FCFA</Text> majoré de frais de dossier fixes de <Text style={styles.bold}>500 FCFA</Text>, soit un montant total de :
-                </Text>
-            </View>
-
-            <View style={styles.amountCard}>
-                <Text style={styles.amountText}>{(loanData.amount + 500).toLocaleString()} FCFA</Text>
-                <Text style={styles.amountInWords}>{(amountInWords + ' francs CFA').toUpperCase()}</Text>
-            </View>
-
-            <View style={styles.section}>
-                <Text>
-                    Je m'engage formellement et irrévocablement à rembourser l'intégralité de cette somme au profit de <Text style={styles.bold}>Creditly</Text>, par transfert via le réseau <Text style={styles.bold}>{loanData.payoutNetwork}</Text> au numéro référencé <Text style={styles.bold}>{repaymentNumber}</Text>, au plus tard le :
-                </Text>
-            </View>
-
-            <Text style={styles.dueDate}>{loanData.dueDate}</Text>
-
-            <View style={styles.clauseBox}>
-                <Text style={styles.clauseTitle}>Clauses et Engagements</Text>
-                <Text style={styles.clauseText}>1. Le débiteur reconnaît que cette dette est certaine, liquide et exigible à l'échéance indiquée.</Text>
-                <Text style={styles.clauseText}>2. Tout retard excédant 48h après l'échéance pourra entraîner l'application de pénalités forfaitaires.</Text>
-                <Text style={styles.clauseText}>3. Le présent document constitue un titre de créance permettant d'engager toute procédure de recouvrement.</Text>
-                <Text style={styles.clauseText}>4. La signature numérique apposée ci-dessous a la même valeur juridique qu'une signature manuscrite.</Text>
-                <Text style={styles.clauseText}>5. Tout versement supérieur au montant total dû est considéré comme une pénalité de traitement non-remboursable.</Text>
-            </View>
-
-            {/* Signatures */}
-            <View style={styles.signatureContainer}>
-                <View style={styles.signatureBlock}>
-                    <Text style={styles.signatureLabel}>Le Débiteur (Signature)</Text>
-                    <Text style={styles.signatureValue}>{signature || userData.prenom + ' ' + userData.nom}</Text>
+                    <View style={styles.contractInfo}>
+                        <Text style={styles.contractNumber}>Contrat N° {Math.random().toString(36).substring(7).toUpperCase()}</Text>
+                        <Text style={styles.date}>Émis le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+                    </View>
                 </View>
 
-                <View style={styles.signatureBlock}>
-                    <View style={styles.stamp}>
-                        <View style={styles.stampInner}>
-                            <Text style={{ fontSize: 7, fontWeight: 'bold', color: 'rgba(0, 50, 150, 0.4)' }}>CREDITLY.IO</Text>
-                            <View style={styles.stampLine} />
-                            <Text style={styles.stampTextLarge}>APPROUVÉ</Text>
-                            <View style={styles.stampLine} />
-                            <Text style={styles.stampTextSmall}>DIGITAL CERTIFIED {new Date().getFullYear()}</Text>
+                {/* Title */}
+                <Text style={styles.mainTitle}>Engagement Unilatéral de Remboursement</Text>
+
+                {/* Body */}
+                <View style={styles.section}>
+                    <Text>
+                        Je soussigné(e), Monsieur/Madame <Text style={styles.bold}>{userData.prenom} {userData.nom}</Text>,
+                        demeurant au <Text style={styles.bold}>{personalData.address || '________________'}</Text>,
+                        dans la ville de <Text style={styles.bold}>{personalData.city || '________________'}</Text>,
+                        exerçant la profession de <Text style={styles.bold}>{personalData.profession || '________________'}</Text>,
+                        et titulaire de la pièce d'identité N° <Text style={styles.bold}>{personalData.idDetails || '________________'}</Text>.
+                    </Text>
+                </View>
+
+                <View style={styles.section}>
+                    <Text>
+                        Reconnais par la présente, avoir contracté auprès de la plateforme <Text style={styles.bold}>Creditly</Text> un prêt de type "Avance sur Revenu" d'un montant de <Text style={styles.bold}>{loanData.amount.toLocaleString()} FCFA</Text>{hasFees ? ' majoré de frais de dossier fixes de ' : ''}{hasFees ? <Text style={styles.bold}>500 FCFA</Text> : ''}, soit un montant total de :
+                    </Text>
+                </View>
+
+                <View style={styles.amountCard}>
+                    <Text style={styles.amountText}>{totalToRepay.toLocaleString()} FCFA</Text>
+                    <Text style={styles.amountInWords}>{(amountInWords + ' francs CFA').toUpperCase()}</Text>
+                </View>
+
+                <View style={styles.section}>
+                    <Text>
+                        Je m'engage formellement et irrévocablement à rembourser l'intégralité de cette somme au profit de <Text style={styles.bold}>Creditly</Text>, par transfert via le réseau <Text style={styles.bold}>{loanData.payoutNetwork}</Text> au numéro référencé <Text style={styles.bold}>{repaymentNumber}</Text>, au plus tard le :
+                    </Text>
+                </View>
+
+                <Text style={styles.dueDate}>{loanData.dueDate}</Text>
+
+                <View style={styles.clauseBox}>
+                    <Text style={styles.clauseTitle}>Clauses et Engagements</Text>
+                    <Text style={styles.clauseText}>1. Le débiteur reconnaît que cette dette est certaine, liquide et exigible à l'échéance indiquée.</Text>
+                    <Text style={styles.clauseText}>2. Tout retard excédant 48h après l'échéance pourra entraîner l'application de pénalités forfaitaires.</Text>
+                    <Text style={styles.clauseText}>3. Le présent document constitue un titre de créance permettant d'engager toute procédure de recouvrement.</Text>
+                    <Text style={styles.clauseText}>4. La signature numérique apposée ci-dessous a la même valeur juridique qu'une signature manuscrite.</Text>
+                    {hasFees && <Text style={styles.clauseText}>5. Tout versement supérieur au montant total dû est considéré comme une pénalité de traitement non-remboursable.</Text>}
+                </View>
+
+                {/* Signatures */}
+                <View style={styles.signatureContainer}>
+                    <View style={styles.signatureBlock}>
+                        <Text style={styles.signatureLabel}>Le Débiteur (Signature)</Text>
+                        <Text style={styles.signatureValue}>{signature || userData.prenom + ' ' + userData.nom}</Text>
+                    </View>
+
+                    <View style={styles.signatureBlock}>
+                        <View style={styles.stamp}>
+                            <View style={styles.stampInner}>
+                                <Text style={{ fontSize: 7, fontWeight: 'bold', color: 'rgba(0, 50, 150, 0.4)' }}>CREDITLY.IO</Text>
+                                <View style={styles.stampLine} />
+                                <Text style={styles.stampTextLarge}>APPROUVÉ</Text>
+                                <View style={styles.stampLine} />
+                                <Text style={styles.stampTextSmall}>DIGITAL CERTIFIED {new Date().getFullYear()}</Text>
+                            </View>
+                        </View>
+                        <Text style={styles.signatureLabel}>Pour Creditly (L'Organisation)</Text>
+                        <View style={styles.certificationBox}>
+                            <Text style={styles.certificationText}>Certification Automatique</Text>
                         </View>
                     </View>
-                    <Text style={styles.signatureLabel}>Pour Creditly (L'Organisation)</Text>
-                    <View style={styles.certificationBox}>
-                        <Text style={styles.certificationText}>Certification Automatique</Text>
-                    </View>
                 </View>
-            </View>
 
-            {/* Footer */}
-            <View style={styles.footer}>
-                <Text style={styles.footerText}>
-                    Creditly Finance Group • Document généré de manière électronique • 100% Digital Workflow
-                </Text>
-            </View>
-        </Page>
-    </Document>
-)
+                {/* Footer */}
+                <View style={styles.footer}>
+                    <Text style={styles.footerText}>
+                        Creditly Finance Group • Document généré de manière électronique • 100% Digital Workflow
+                    </Text>
+                </View>
+            </Page>
+        </Document>
+    );
+};
