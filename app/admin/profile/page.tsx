@@ -24,7 +24,9 @@ export default async function AdminProfilePage() {
     }
 
     // Admins only
-    if (!profile.role || profile.role === 'client') {
+    const roles = (profile.roles || []) as string[]
+    const isAdmin = roles.some(r => r !== 'client')
+    if (roles.length === 0 || !isAdmin) {
         return redirect('/client/dashboard')
     }
 

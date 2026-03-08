@@ -10,7 +10,7 @@ export default async function AdminSubscriptionsPage() {
             *,
             plan:abonnements(*),
             user:user_id(*),
-            reviewer:admin_id(nom, prenom, role)
+            reviewer:admin_id(nom, prenom, roles)
         `)
         .order('status', { ascending: false })
         .order('created_at', { ascending: false })

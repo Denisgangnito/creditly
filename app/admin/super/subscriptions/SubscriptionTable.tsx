@@ -31,7 +31,7 @@ interface Subscription {
     reviewer?: {
         nom: string
         prenom: string
-        role: string
+        roles: string[]
     }
 }
 
@@ -218,7 +218,7 @@ export default function SubscriptionTable({ rows }: { rows: Subscription[] }) {
                                             {sub.reviewer ? (
                                                 <div className="flex flex-col">
                                                     <span className="text-slate-300 group-hover:text-white transition-colors">{sub.reviewer.prenom} {sub.reviewer.nom}</span>
-                                                    <span className="text-[10px] text-slate-600 uppercase tracking-wider">{sub.reviewer.role}</span>
+                                                    <span className="text-[10px] text-slate-600 uppercase tracking-wider">{sub.reviewer.roles?.[0]}</span>
                                                 </div>
                                             ) : (
                                                 <span className="text-xs text-slate-600 italic">En attente</span>
@@ -334,7 +334,7 @@ export default function SubscriptionTable({ rows }: { rows: Subscription[] }) {
                                             </div>
                                             <div>
                                                 <p className="text-xs font-black text-slate-300 italic leading-none">{sub.reviewer.prenom} {sub.reviewer.nom}</p>
-                                                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5">{sub.reviewer.role}</p>
+                                                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5">{sub.reviewer.roles?.[0]}</p>
                                             </div>
                                         </div>
                                     </div>
