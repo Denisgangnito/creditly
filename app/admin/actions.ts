@@ -400,6 +400,95 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
     return { success: true }
 }
 
+export async function deleteRepayment(repaymentId: string) {
+    const role = await getCurrentUserRole()
+    if (!role || !['admin_repayment', 'superadmin', 'owner'].includes(role)) {
+        return { error: "Accès refusé. Seuls les admins remboursement, superadmin et owner peuvent supprimer un remboursement." }
+    }
+
+    const supabase = await createAdminClient()
+
+    // 1. Fetch the repayment + loan info before any deletion
+    const { data: repayment, error: fetchError } = await supabase
+        .from('remboursements')
+        .select('*')
+        .eq('id', repaymentId)
+        .single()
+
+    if (fetchError || !repayment) {
+        return { error: "Remboursement introuvable." }
+    }
+
+    // 2. If the repayment was verified, reverse its impact on the loan
+    if (repayment.status === 'verified') {
+        const { data: loan } = await supabase
+            .from('prets')
+            .select('amount, amount_paid, service_fee, status')
+            .eq('id', repayment.loan_id)
+            .single()
+
+        if (loan) {
+            const amountApplied = repayment.amount_declared - (repayment.surplus_amount || 0)
+            const reversedPaid = Math.max(0, Number(loan.amount_paid) - amountApplied)
+            const totalLoanAmount = Number(loan.amount) + (Number(loan.service_fee) || 0)
+
+            // Revert loan status from 'paid' back to 'active' if necessary
+            const loanWasPaid = loan.status === 'paid'
+            const revertedStatus = loanWasPaid ? 'active' : undefined
+
+            await supabase
+                .from('prets')
+                .update({
+                    amount_paid: reversedPaid,
+                    ...(revertedStatus ? { status: revertedStatus } : {})
+                })
+                .eq('id', repayment.loan_id)
+
+            // 3. Remove the repayment_reward commission related to this repayment (if exists)
+            // We remove the commission only if it can be tied back to this repayment's loan and type
+            // (commission is per-loan, not per-repayment, so only delete if this was the only verified repayment)
+            const { count: otherVerifiedCount } = await supabase
+                .from('remboursements')
+                .select('*', { count: 'exact', head: true })
+                .eq('loan_id', repayment.loan_id)
+                .eq('status', 'verified')
+                .neq('id', repaymentId)
+
+            if ((otherVerifiedCount || 0) === 0) {
+                // This was the only verified repayment → remove the commission
+                await supabase
+                    .from('admin_commissions')
+                    .delete()
+                    .eq('loan_id', repayment.loan_id)
+                    .eq('type', 'repayment_reward')
+            }
+        }
+    }
+
+    // 4. Delete the proof file from storage (non-blocking)
+    if (repayment.proof_url && !repayment.proof_url.includes('system/')) {
+        try {
+            await supabase.storage.from('repayment-proofs').remove([repayment.proof_url])
+        } catch (e) {
+            console.error('Storage delete error (non-blocking):', e)
+        }
+    }
+
+    // 5. Delete the repayment row
+    const { error: deleteError } = await supabase
+        .from('remboursements')
+        .delete()
+        .eq('id', repaymentId)
+
+    if (deleteError) return { error: `Erreur lors de la suppression : ${deleteError.message}` }
+
+    revalidatePath('/admin/repayments')
+    revalidatePath('/admin/loans')
+    revalidatePath('/client/dashboard')
+    revalidatePath('/client/loans')
+    return { success: true }
+}
+
 export async function activateSubscription(subId: string) {
     const role = await getCurrentUserRole()
     if (!role || !['superadmin', 'owner'].includes(role)) {

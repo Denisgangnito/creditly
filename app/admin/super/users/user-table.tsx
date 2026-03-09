@@ -11,22 +11,30 @@ export default function UserManagementTable({ rows }: { rows: Array<{ id: string
     const [processingId, setProcessingId] = useState<string | null>(null)
     const [confirmAction, setConfirmAction] = useState<{ id: string, email: string, type: 'delete' | 'blacklist', hasLoans?: boolean } | null>(null)
     const [errorAction, setErrorAction] = useState<{ title: string, message: string } | null>(null)
+    // Map locale des rôles par userId pour mise à jour optimiste (évite la race condition multi-rôles)
+    const [localRolesMap, setLocalRolesMap] = useState<Record<string, string[]>>({})
 
-    const handleToggleRole = async (userId: string, currentRoles: string[], roleToToggle: string) => {
+    // Retourne les rôles courants (locaux si modifiés, sinon serveur)
+    const getRoles = (row: { id: string; roles: string[] }) => localRolesMap[row.id] ?? row.roles
+
+    const handleToggleRole = async (userId: string, roleToToggle: string, currentDisplayedRoles: string[]) => {
         let newRoles: string[]
-        if (currentRoles.includes(roleToToggle)) {
-            // Remove role (but keep at least one if it's the last one? No, let's trust admin)
-            newRoles = currentRoles.filter(r => r !== roleToToggle)
+        if (currentDisplayedRoles.includes(roleToToggle)) {
+            newRoles = currentDisplayedRoles.filter(r => r !== roleToToggle)
         } else {
-            // Add role
-            newRoles = [...currentRoles, roleToToggle]
+            newRoles = [...currentDisplayedRoles, roleToToggle]
         }
 
-        if (newRoles.length === 0) newRoles = ['client'] // Default fallback
+        if (newRoles.length === 0) newRoles = ['client'] // Fallback par défaut
+
+        // Mise à jour optimiste immédiate de l'état local
+        setLocalRolesMap((prev: Record<string, string[]>) => ({ ...prev, [userId]: newRoles }))
 
         setLoading(userId)
         const result = await updateUserRoles(userId, newRoles as any)
         if (result?.error) {
+            // En cas d'erreur, on revert l'état local
+            setLocalRolesMap((prev: Record<string, string[]>) => ({ ...prev, [userId]: currentDisplayedRoles }))
             setErrorAction({
                 title: "Erreur de Privilège",
                 message: result.error
@@ -130,18 +138,18 @@ export default function UserManagementTable({ rows }: { rows: Array<{ id: string
                                 <td className="px-8 py-6">
                                     <div className="relative group/roles">
                                         <button className="flex items-center gap-2 bg-slate-900 border border-white/5 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:bg-slate-800 transition-all">
-                                            {row.roles.length} Rôle(s) <ChevronDown size={14} />
+                                            {getRoles(row).length} Rôle(s) <ChevronDown size={14} />
                                         </button>
 
                                         <div className="absolute left-0 top-full mt-2 w-48 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover/roles:opacity-100 group-hover/roles:visible transition-all z-20 p-2 space-y-1">
                                             {availableRoles.map(role => (
                                                 <button
                                                     key={role.id}
-                                                    onClick={() => handleToggleRole(row.id, row.roles, role.id)}
-                                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${row.roles.includes(role.id) ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'}`}
+                                                    onClick={() => handleToggleRole(row.id, role.id, getRoles(row))}
+                                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${getRoles(row).includes(role.id) ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'}`}
                                                 >
                                                     {role.label}
-                                                    {row.roles.includes(role.id) && <CheckmarkFilled size={14} />}
+                                                    {getRoles(row).includes(role.id) && <CheckmarkFilled size={14} />}
                                                 </button>
                                             ))}
                                         </div>
@@ -243,8 +251,8 @@ export default function UserManagementTable({ rows }: { rows: Array<{ id: string
                                         {availableRoles.map(role => (
                                             <button
                                                 key={role.id}
-                                                onClick={() => handleToggleRole(row.id, row.roles, role.id)}
-                                                className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all border ${row.roles.includes(role.id) ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-white/5 text-slate-500'}`}
+                                                onClick={() => handleToggleRole(row.id, role.id, getRoles(row))}
+                                                className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all border ${getRoles(row).includes(role.id) ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-white/5 text-slate-500'}`}
                                             >
                                                 {role.label}
                                             </button>

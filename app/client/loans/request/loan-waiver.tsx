@@ -258,6 +258,7 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                                         signature={signature || `${userData.prenom} ${userData.nom}`}
                                         amountInWords={amountInWords}
                                         repaymentNumber={repaymentNumber}
+                                        applicationDate={today}
                                     />
                                 }
                                 fileName={`Contrat_Creditly_${userData.nom}_${new Date().getTime()}.pdf`}

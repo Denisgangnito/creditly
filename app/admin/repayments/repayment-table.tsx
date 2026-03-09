@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { updateRepaymentStatus, getSignedProofUrl } from '../actions'
+import { updateRepaymentStatus, getSignedProofUrl, deleteRepayment } from '../actions'
 import ConfirmModal from '@/app/components/ui/ConfirmModal'
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal'
 import { useRouter } from 'next/navigation'
@@ -28,6 +28,7 @@ export default function AdminRepaymentTable({
     const [loading, setLoading] = useState<string | null>(null)
     const [preview, setPreview] = useState<{ url: string, type: 'image' | 'pdf' } | null>(null)
     const [confirmAction, setConfirmAction] = useState<{ id: string, status: 'verified' | 'rejected' } | null>(null)
+    const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, user: string, status: string } | null>(null)
     const [errorAction, setErrorAction] = useState<{ title: string, message: string } | null>(null)
     const router = useRouter()
 
@@ -46,6 +47,24 @@ export default function AdminRepaymentTable({
             setLoading(null)
         } else {
             setConfirmAction(null)
+            window.location.reload()
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!deleteConfirm) return
+        setLoading(deleteConfirm.id)
+
+        const result = await deleteRepayment(deleteConfirm.id)
+
+        if (result?.error) {
+            setErrorAction({
+                title: "Erreur de suppression",
+                message: result.error
+            })
+            setLoading(null)
+        } else {
+            setDeleteConfirm(null)
             window.location.reload()
         }
     }
@@ -191,6 +210,15 @@ export default function AdminRepaymentTable({
                                                         row.status}
                                             </span>
                                         )}
+                                        {/* Delete button — always visible */}
+                                        <button
+                                            onClick={() => setDeleteConfirm({ id: row.id, user: row.user.split('(')[0].trim(), status: row.status })}
+                                            disabled={loading === row.id}
+                                            title="Supprimer ce remboursement"
+                                            className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900 border border-white/5 text-slate-600 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 transition-all active:scale-95"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -267,6 +295,15 @@ export default function AdminRepaymentTable({
                                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 italic">Statut : {row.status === 'verified' ? 'Payé' : row.status}</span>
                                 </div>
                             )}
+                            {/* Delete button — always visible on mobile */}
+                            <button
+                                onClick={() => setDeleteConfirm({ id: row.id, user: row.user.split('(')[0].trim(), status: row.status })}
+                                disabled={loading === row.id}
+                                title="Supprimer"
+                                className="w-16 h-16 bg-slate-900 border border-white/5 text-slate-600 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 rounded-2xl flex items-center justify-center transition-all active:scale-95"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
                         </div>
                     </div>
                 ))}
@@ -292,6 +329,21 @@ export default function AdminRepaymentTable({
                 confirmText={confirmAction?.status === 'verified' ? 'Valider' : 'Rejeter'}
                 variant={confirmAction?.status === 'verified' ? 'success' : 'danger'}
                 isLoading={loading === confirmAction?.id}
+            />
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={!!deleteConfirm}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={handleDelete}
+                title="Supprimer ce remboursement ?"
+                message={`Vous allez supprimer définitivement le remboursement de ${deleteConfirm?.user || ''}.${deleteConfirm?.status === 'verified'
+                        ? ' ⚠️ Ce remboursement est VALIDÉ : son montant sera automatiquement déduit du solde payé du prêt correspondant, et la commission associée sera supprimée.'
+                        : ''
+                    } Cette action est irréversible.`}
+                confirmText="Supprimer définitivement"
+                variant="danger"
+                isLoading={loading === deleteConfirm?.id}
             />
 
             {/* Error Feedback Modal */}
