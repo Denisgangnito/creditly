@@ -2,8 +2,10 @@ import { createClient } from '@/utils/supabase/server'
 import UserManagementTable from './user-table'
 import Link from 'next/link'
 import { ChevronLeft } from '@carbon/icons-react'
+import { requireAdminRole } from '@/utils/admin-security'
 
 export default async function UserManagementPage() {
+    await requireAdminRole(['superadmin', 'owner', 'admin_comptable'])
     const supabase = await createClient()
 
     const { data: users, error } = await supabase
@@ -30,7 +32,6 @@ export default async function UserManagementPage() {
         roles: u.roles || [],
         is_active: u.is_account_active,
         has_active_loans: userDebts.has(u.id) && userDebts.get(u.id)! > 0,
-        surplus_balance: u.surplus_balance || 0,
         debt: userDebts.get(u.id) || 0
     })) || []
 

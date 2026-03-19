@@ -52,7 +52,40 @@ export async function middleware(request: NextRequest) {
 
     const path = request.nextUrl.pathname
 
-    // Auth routes
+    // Allow static files and maintenance page itself
+    const isMaintenancePage = path === '/maintenance'
+    if (isMaintenancePage) return response
+
+    // Check Maintenance Mode
+    try {
+        const { data: maintenanceSetting } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'maintenance_mode')
+            .maybeSingle()
+
+        const isMaintenanceMode = maintenanceSetting?.value === 'true'
+
+        if (isMaintenanceMode) {
+            let isAdmin = false
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('users')
+                    .select('roles')
+                    .eq('id', user.id)
+                    .single()
+
+                const roles = (profile?.roles || []) as string[]
+                isAdmin = roles.some(r => ['superadmin', 'admin_comptable', 'admin_repayment', 'admin_loan', 'admin_kyc', 'owner'].includes(r))
+            }
+
+            if (!isAdmin && !path.startsWith('/_next') && !path.includes('.')) {
+                return NextResponse.redirect(new URL('/maintenance', request.url))
+            }
+        }
+    } catch (e) {
+        console.error('Maintenance check failed', e)
+    }
 
     // Protection logic
     if (!user) {
@@ -66,11 +99,12 @@ export async function middleware(request: NextRequest) {
     // If User IS logged in, check activation status
     const { data: userData } = await supabase
         .from('users')
-        .select('role, is_account_active')
+        .select('roles, is_account_active')
         .eq('id', user.id)
         .single()
 
-    const isClient = userData?.role === 'client'
+    const userRoles = (userData?.roles || []) as string[]
+    const isClient = userRoles.includes('client') && userRoles.length === 1
     const isInactive = userData?.is_account_active === false
     const isPendingPage = path === '/client/pending-activation' || path === '/client/kyc'
 

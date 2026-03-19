@@ -148,9 +148,6 @@ export default async function SuperAdminPage({
     const { data: allPenalties } = await supabase.from('remboursements').select('surplus_amount').eq('status', 'verified')
     const totalPenaltiesCollected = allPenalties?.reduce((acc: number, r: any) => acc + (Number(r.surplus_amount) || 0), 0) || 0
 
-    // Reliquat des surplus historiques (si encore présents dans les soldes types users)
-    const { data: allUsersFinance } = await supabase.from('users').select('surplus_balance')
-    const totalGlobalCredits = allUsersFinance?.reduce((acc: number, u: any) => acc + (Number(u.surplus_balance) || 0), 0) || 0
 
     return (
         <div className="py-10 md:py-16 animate-fade-in">
@@ -198,8 +195,7 @@ export default async function SuperAdminPage({
                         { label: 'Revenue Mensuel', value: monthlyRevenue, color: 'text-emerald-400', sub: `${new Date(0, month - 1).toLocaleString('fr', { month: 'long' })} ${year}`, icon: <Currency /> },
                         { label: 'Revenue Hebdo', value: weeklyRevenue, color: 'text-blue-400', sub: `Sem. du ${startOfWeek.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`, icon: <Time /> },
                         { label: 'Volume Pénalités', value: totalPenaltiesCollected, color: 'text-blue-400', sub: 'Surplus perçus par Creditly', icon: <Wallet /> },
-                        { label: 'Dette Totale', value: totalRemainingToRecover, color: 'text-red-400', sub: 'À récupérer sur prêts actifs', icon: <Document /> },
-                        { label: 'Reliquat Crédits', value: totalGlobalCredits, color: 'text-amber-400', sub: 'Anciens surplus restants', icon: <CheckmarkFilled /> }
+                        { label: 'Dette Totale', value: totalRemainingToRecover, color: 'text-red-400', sub: 'À récupérer sur prêts actifs', icon: <Document /> }
                     ].map((kpi, i) => (
                         <div key={i} className="glass-panel p-8 group relative overflow-hidden bg-slate-900/50 border-slate-800">
                             <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all"></div>
@@ -503,9 +499,11 @@ export default async function SuperAdminPage({
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-blue-500/10 transition-colors"></div>
                                 <h4 className="text-xl font-black mb-2 text-white italic tracking-tighter uppercase relative z-10">Data Audit.</h4>
                                 <p className="text-slate-500 text-[10px] font-black relative z-10 mb-6 italic uppercase tracking-widest leading-relaxed">Génération de rapports d&apos;activité consolidés.</p>
-                                <button className="premium-button w-full py-4 relative z-10 active:scale-95 shadow-2xl text-[10px]">
-                                    Télécharger Rapports
-                                </button>
+                                <a href="/api/admin/audit/export" download className="block">
+                                    <button className="premium-button w-full py-4 relative z-10 active:scale-95 shadow-2xl text-[10px]">
+                                        Télécharger Rapports
+                                    </button>
+                                </a>
                             </div>
                         </section>
                     </div>

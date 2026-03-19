@@ -54,15 +54,6 @@ export default async function UserDetailsPage({ params }: { params: Promise<{ id
                                 <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-6 italic">Balance Financière</h3>
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
-                                            <Money size={20} />
-                                        </div>
-                                        <div>
-                                            <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Surplus Disponible</p>
-                                            <p className="text-xl font-black text-blue-400 italic tracking-tighter">{(user.surplus_balance || 0).toLocaleString()} <span className="text-[8px] not-italic text-slate-700">F</span></p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
                                             <Money size={20} />
                                         </div>

@@ -31,6 +31,25 @@ export default function RootLayout({
       </head>
       <body className="antialiased selection:bg-blue-600/20" suppressHydrationWarning>
         <Script
+          id="protection-script"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              document.addEventListener('contextmenu', (e) => e.preventDefault());
+              document.addEventListener('keydown', (e) => {
+                if (
+                  e.key === 'F12' ||
+                  (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+                  (e.metaKey && e.altKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+                  (e.ctrlKey && e.key === 'u') || (e.metaKey && e.key === 'u')
+                ) {
+                  e.preventDefault();
+                }
+              });
+            `
+          }}
+        />
+        <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8933090351597750"
           crossOrigin="anonymous"

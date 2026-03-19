@@ -2,7 +2,7 @@
 create extension if not exists "uuid-ossp";
 
 -- 1. ENUMS (Types defined in the specs)
-create type user_role as enum ('client', 'admin_kyc', 'admin_loan', 'admin_repayment', 'superadmin');
+create type user_role as enum ('client', 'admin_kyc', 'admin_loan', 'admin_repayment', 'admin_comptable', 'superadmin', 'owner');
 create type kyc_status as enum ('pending', 'approved', 'rejected');
 create type loan_status as enum ('pending', 'approved', 'active', 'rejected', 'paid', 'overdue');
 create type repayment_status as enum ('pending', 'verified', 'rejected');
@@ -16,8 +16,14 @@ create table public.users (
   prenom text,
   telephone text,
   whatsapp text,
-  role user_role default 'client',
-  is_account_active boolean default false, -- Active only after KYC? Or email verification? Let's say needs admin activation or KYC.
+  roles public.user_role[] default array['client']::public.user_role[],
+  is_account_active boolean default false,
+  birth_date date,
+  profession text,
+  guarantor_nom text,
+  guarantor_prenom text,
+  guarantor_whatsapp text,
+
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -36,7 +42,7 @@ begin
   return exists (
     select 1 from public.users
     where id = auth.uid()
-    and role = any(target_roles)
+    and roles && target_roles
   );
 end;
 $$ language plpgsql security definer;
@@ -45,14 +51,12 @@ $$ language plpgsql security definer;
 create or replace function public.prevent_sensitive_updates()
 returns trigger as $$
 begin
-  -- Autoriser si c'est un superadmin qui fait la modif (en utilisant auth.uid())
-  -- Ou si l'UID est nul (cas de l'éditeur SQL Supabase direct)
   if (public.check_user_role(array['superadmin']::public.user_role[]) or auth.uid() is null) then
     return new;
   end if;
 
-  if new.role is distinct from old.role then
-    raise exception 'You cannot change your own role.';
+  if new.roles is distinct from old.roles then
+    raise exception 'You cannot change your own roles.';
   end if;
   if new.is_account_active is distinct from old.is_account_active then
     raise exception 'You cannot activate your own account.';
@@ -70,12 +74,12 @@ create policy "Users can update their own profile" on public.users
 
 create policy "Admins can view all profiles" on public.users
   for select using (
-    public.check_user_role(array['admin_kyc', 'admin_loan', 'admin_repayment', 'superadmin']::public.user_role[])
+    public.check_user_role(array['admin_kyc', 'admin_loan', 'admin_repayment', 'admin_comptable', 'superadmin', 'owner']::public.user_role[])
   );
 
 create policy "Superadmin can update everyone" on public.users
   for update using (
-    public.check_user_role(array['superadmin']::public.user_role[])
+    public.check_user_role(array['superadmin', 'owner']::public.user_role[])
   );
 
 -- 3. SUBSCRIPTION PLANS (Abonnements)
@@ -190,7 +194,7 @@ alter table public.remboursements enable row level security;
 create policy "Users view own repayments" on public.remboursements for select using (auth.uid() = user_id);
 create policy "Users submit repayments" on public.remboursements for insert with check (auth.uid() = user_id and status = 'pending');
 create policy "Repayment Admin can view and update" on public.remboursements for all using (
-    public.check_user_role(array['admin_repayment', 'superadmin']::public.user_role[])
+    public.check_user_role(array['admin_repayment', 'admin_comptable', 'superadmin', 'owner']::public.user_role[])
 );
 
 
@@ -198,14 +202,31 @@ create policy "Repayment Admin can view and update" on public.remboursements for
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.users (id, email, nom, prenom, role, whatsapp)
+  insert into public.users (
+    id, 
+    email, 
+    nom, 
+    prenom, 
+    roles, 
+    whatsapp, 
+    birth_date, 
+    profession, 
+    guarantor_nom, 
+    guarantor_prenom, 
+    guarantor_whatsapp
+  )
   values (
     new.id, 
     new.email, 
     new.raw_user_meta_data->>'nom', 
     new.raw_user_meta_data->>'prenom', 
-    'client',
-    COALESCE(new.raw_user_meta_data->>'whatsapp', new.phone)
+    array['client']::public.user_role[],
+    coalesce(new.raw_user_meta_data->>'whatsapp', new.phone),
+    (new.raw_user_meta_data->>'birth_date')::date,
+    new.raw_user_meta_data->>'profession',
+    new.raw_user_meta_data->>'guarantor_nom',
+    new.raw_user_meta_data->>'guarantor_prenom',
+    new.raw_user_meta_data->>'guarantor_whatsapp'
   );
   return new;
 end;
@@ -242,3 +263,19 @@ create policy "Admins can manage blacklist" on public.email_blacklist for all us
 );
 create policy "Everyone can view blacklist for signup check" on public.email_blacklist for select using (true);
 
+-- 10. SYSTEM SETTINGS
+create table public.system_settings (
+  key text primary key,
+  value jsonb not null,
+  description text,
+  updated_at timestamptz default now()
+);
+
+insert into public.system_settings (key, value, description) values
+('maintenance_mode', 'false'::jsonb, 'Toggle site-wide maintenance mode');
+
+alter table public.system_settings enable row level security;
+create policy "Everyone can view settings" on public.system_settings for select using (true);
+create policy "Superadmin/Owner can manage settings" on public.system_settings for all using (
+    public.check_user_role(array['superadmin', 'owner']::public.user_role[])
+);

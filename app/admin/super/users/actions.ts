@@ -2,8 +2,10 @@
 
 import { createClient, createAdminClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { requireAdminRole } from '@/utils/admin-security'
 
 export async function updateUserRoles(userId: string, roles: Array<'client' | 'admin_kyc' | 'admin_loan' | 'admin_repayment' | 'superadmin' | 'admin_comptable' | 'owner'>) {
+    await requireAdminRole(['superadmin', 'owner'])
     const supabase = await createClient()
 
     const { error } = await supabase.from('users').update({ roles }).eq('id', userId)
@@ -18,6 +20,7 @@ export async function updateUserRoles(userId: string, roles: Array<'client' | 'a
  * Does NOT blacklist the email.
  */
 export async function deleteUserAccount(userId: string) {
+    await requireAdminRole(['superadmin', 'owner'])
     const adminSupabase = await createAdminClient()
 
     try {
@@ -54,6 +57,7 @@ export async function deleteUserAccount(userId: string) {
  * Blacklist & Delete: Adds email to blacklist and then wipes account data.
  */
 export async function blacklistUserAccount(userId: string, email: string) {
+    await requireAdminRole(['superadmin', 'owner'])
     const adminSupabase = await createAdminClient()
 
     // 1. Add to blacklist table
