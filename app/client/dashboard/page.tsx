@@ -103,7 +103,7 @@ export default async function ClientDashboard() {
 
     const { data: recentRepayments } = await supabase
         .from('remboursements')
-        .select('id, loan_id, amount_declared, surplus_amount, status, created_at, validated_at')
+        .select('id, loan_id, amount_declared, status, created_at, validated_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(3)

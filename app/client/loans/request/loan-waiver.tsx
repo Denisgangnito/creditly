@@ -165,9 +165,9 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                                 Numéro de réception : <strong className="text-blue-600 italic font-black">{repaymentNumber}</strong>
                             </p>
                             <div className="p-3 bg-red-50 border border-red-100 rounded-xl">
-                                <p className="text-[10px] font-black text-red-600 uppercase tracking-widest leading-none mb-1 italic">Règle sur les trop-perçus (Surplus)</p>
+                                <p className="text-[10px] font-black text-red-600 uppercase tracking-widest leading-none mb-1 italic">Règle de remboursement</p>
                                 <p className="text-[10px] text-slate-500 font-bold italic">
-                                    Tout versement supérieur au montant total dû est considéré comme une pénalité de traitement et ne sera pas remboursé ni crédité.
+                                    Tout versement égal au montant total dû solde votre dette et vous permet de reprendre un nouveau prêt instantanément.
                                 </p>
                             </div>
                         </div>
@@ -364,7 +364,7 @@ export default function LoanWaiver({ userData, loanData, onConfirm, onBack, load
                                     <p>2. Tout retard excédant 48h après l'échéance pourra entraîner l'application de pénalités forfaitaires de recouvrement.</p>
                                     <p>3. Le présent document constitue un titre de créance permettant d'engager toute procédure de recouvrement légale nécessaire.</p>
                                     <p>4. La signature numérique apposée ci-dessous a la même valeur juridique qu'une signature manuscrite.</p>
-                                    <p>5. Tout versement supérieur au montant total dû est considéré comme une pénalité de traitement non-remboursable.</p>
+                                    <p>5. Tout versement égal au montant total dû solde officiellement votre créance.</p>
                                 </div>
                             </div>
                         </div>

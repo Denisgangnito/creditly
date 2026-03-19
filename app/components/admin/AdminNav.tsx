@@ -20,8 +20,8 @@ export default function AdminNav({ userRoles }: { userRoles: UserRole[] }) {
         { name: 'KYC', href: '/admin/kyc', icon: 'M10...', roles: ['admin_kyc', 'superadmin'] },
         { name: 'Prêts', href: '/admin/loans', icon: 'M12...', roles: ['admin_loan', 'superadmin', 'admin_comptable'] },
         { name: 'Remb.', href: '/admin/repayments', icon: 'M9...', roles: ['admin_repayment', 'superadmin', 'admin_comptable'] },
-        { name: 'Abonnements', href: '/admin/super/subscriptions', icon: 'M15...', roles: ['superadmin'] },
-        { name: 'Gestion Utilisateurs', href: '/admin/super/users', roles: ['superadmin', 'owner'], icon: <UserMultiple size={20} /> },
+        { name: 'Abonnements', href: '/admin/super/subscriptions', icon: 'M15...', roles: ['superadmin', 'admin_comptable'] },
+        { name: 'Gestion Utilisateurs', href: '/admin/super/users', roles: ['superadmin', 'owner', 'admin_comptable'], icon: <UserMultiple size={20} /> },
         { name: 'Config Paramètres', href: '/admin/settings', roles: ['owner'], icon: <Settings size={20} /> },
         { name: 'Mon Profil', href: '/admin/profile', icon: 'M1...', roles: ['admin_kyc', 'admin_loan', 'admin_repayment', 'superadmin', 'admin_comptable'] }
     ]

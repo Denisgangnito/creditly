@@ -1,8 +1,10 @@
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import SubscriptionTable from './SubscriptionTable'
+import { requireAdminRole } from '@/utils/admin-security'
 
 export default async function AdminSubscriptionsPage() {
+    await requireAdminRole(['superadmin', 'admin_comptable'])
     const supabase = await createClient()
     const { data: allSubs } = await supabase
         .from('user_subscriptions')

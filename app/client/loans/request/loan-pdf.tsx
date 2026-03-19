@@ -309,7 +309,7 @@ export const LoanPDFDocument = ({ userData, loanData, personalData, signature, a
                     <Text style={styles.clauseText}>2. Tout retard excédant 48h après l'échéance pourra entraîner l'application de pénalités forfaitaires.</Text>
                     <Text style={styles.clauseText}>3. Le présent document constitue un titre de créance permettant d'engager toute procédure de recouvrement.</Text>
                     <Text style={styles.clauseText}>4. La signature numérique apposée ci-dessous a la même valeur juridique qu'une signature manuscrite.</Text>
-                    {hasFee && <Text style={styles.clauseText}>5. Tout versement supérieur au montant total dû est considéré comme une pénalité de traitement non-remboursable.</Text>}
+                    {hasFee && <Text style={styles.clauseText}>5. Tout versement égal au montant total dû solde votre créance.</Text>}
                 </View>
 
                 {/* Signatures */}
