@@ -611,12 +611,12 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                             </p>
 
                             <p className="text-base text-justify">
-                                Reconnais par la présente, avoir contracté auprès de la plateforme <strong>Creditly</strong>, un prêt de type "Avance sur Revenu" d'un montant de <strong className="border-b border-black">{viewWaiver.amount.toLocaleString()} FCFA</strong>{new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? <>, majoré de frais de dossier fixes de <strong className="border-b border-black">500 FCFA</strong></> : ''}, soit un montant total de :
+                                Reconnais par la présente, avoir contracté auprès de la plateforme <strong>Creditly</strong>, un prêt de type "Avance sur Revenu" d'un montant de <strong className="border-b border-black">{viewWaiver.amount.toLocaleString('fr-FR')} FCFA</strong>{new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? <>, majoré de frais de dossier fixes de <strong className="border-b border-black">500 FCFA</strong></> : ''}, soit un montant total de :
                             </p>
 
                             <div className="text-center p-8 bg-gray-50 border-4 border-double border-black">
                                 <div className="font-black text-4xl italic tracking-tighter mb-2">
-                                    {(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toLocaleString()} FCFA
+                                    {(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toLocaleString('fr-FR')} FCFA
                                 </div>
                                 <div className="text-[10px] font-black uppercase text-gray-500 border-t border-gray-200 pt-2 inline-block px-10">
                                     {numberToFrench(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toUpperCase()} FRANCS CFA

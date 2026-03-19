@@ -5,7 +5,7 @@ import { CheckmarkFilled, CloseFilled } from '@carbon/icons-react'
 
 export default async function AdminKycPage() {
     // Security Check
-    await requireAdminRole(['admin_kyc', 'superadmin'])
+    await requireAdminRole(['admin_kyc', 'superadmin', 'admin_comptable', 'owner'])
 
     const supabase = await createClient()
 

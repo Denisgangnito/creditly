@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient, createAdminClient } from '@/utils/supabase/server'
 import { requireAdminRole } from '@/utils/admin-security'
 import Link from 'next/link'
 import { Currency, Document, ChevronRight, Filter, CheckmarkFilled, Time, Wallet } from '@carbon/icons-react'
@@ -121,28 +121,30 @@ export default async function SuperAdminPage({
     ).slice(0, 5) || []
 
     // 5. Performance Admin (Audit)
-    // On récupère tous les admins
-    const { data: admins } = await supabase
+    // Use Admin Client to bypass RLS for aggregate statistics
+    const adminSupabase = await createAdminClient()
+    
+    // Fetch all admins/staff
+    const { data: admins } = await adminSupabase
         .from('users')
         .select('id, nom, prenom, roles, whatsapp')
         .overlaps('roles', ['admin_kyc', 'admin_loan', 'admin_repayment', 'superadmin', 'admin_comptable', 'owner'])
 
-    // On agrège leurs actions
-    const kycActions = await supabase.from('kyc_submissions').select('admin_id, status').not('admin_id', 'is', null)
-    const loanActions = await supabase.from('prets').select('admin_id, status').not('admin_id', 'is', null)
-    const repaymentActions = await supabase.from('remboursements').select('admin_id, status').not('admin_id', 'is', null)
-    // Removed subscription actions from audit as per request
+    // Fetch actions with a single query per table if possible, but here we do simple fetching
+    const kycActions = await adminSupabase.from('kyc_submissions').select('admin_id, status').not('admin_id', 'is', null)
+    const loanActions = await adminSupabase.from('prets').select('admin_id, status').not('admin_id', 'is', null)
+    const repaymentActions = await adminSupabase.from('remboursements').select('admin_id, status').not('admin_id', 'is', null)
 
-    const adminPerformance = admins?.map((admin: any) => {
-        const kycCount = kycActions.data?.filter(a => a.admin_id === admin.id).length || 0
-        const loanCount = loanActions.data?.filter(a => a.admin_id === admin.id).length || 0
-        const repaymentCount = repaymentActions.data?.filter(a => a.admin_id === admin.id).length || 0
+    const adminPerformance = (admins || [])?.map((admin: any) => {
+        const kycCount = kycActions.data?.filter((a: any) => a.admin_id === admin.id).length || 0
+        const loanCount = loanActions.data?.filter((a: any) => a.admin_id === admin.id).length || 0
+        const repaymentCount = repaymentActions.data?.filter((a: any) => a.admin_id === admin.id).length || 0
         return {
             ...admin,
             totalActions: kycCount + loanCount + repaymentCount,
             details: { kycCount, loanCount, repaymentCount }
         }
-    }).sort((a: any, b: any) => b.totalActions - a.totalActions)
+    }).filter((a: any) => a.totalActions > 0 || (a.roles || []).includes('owner')).sort((a: any, b: any) => b.totalActions - a.totalActions)
 
     // Récupération des pénalités collectées (historique des surplus)
     const { data: allPenalties } = await supabase.from('remboursements').select('surplus_amount').eq('status', 'verified')
