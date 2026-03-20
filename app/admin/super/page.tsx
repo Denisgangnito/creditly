@@ -63,13 +63,23 @@ export default async function SuperAdminPage({
     const { count: pendingRepayments } = await supabase.from('remboursements').select('*', { count: 'exact', head: true }).eq('status', 'pending')
 
     const globalQuotas = await checkGlobalQuotasStatus()
-    const quotasArray = Object.entries(globalQuotas || {}).map(([key, val]: any) => ({
-        label: key.includes('-') || key.length > 10 ? 'Plan System' : `${key} F`,
-        value: val.count,
-        limit: val.limit,
-        percent: val.limit > 0 ? (val.count / val.limit) * 100 : val.limit === 0 ? 100 : 0,
-        status: val.reached ? 'danger' : (val.limit > 0 && val.count / val.limit > 0.8) ? 'warning' : 'success'
-    })).filter(q => q.limit >= 0)
+    const { data: allOffersNames } = await supabase.from('abonnements').select('id, name, max_loan_amount')
+    const offersMap: Record<string, string> = {}
+    allOffersNames?.forEach(o => {
+        offersMap[o.id] = o.name
+        offersMap[o.max_loan_amount.toString()] = o.name
+    })
+
+    const quotasArray = Object.entries(globalQuotas || {}).map(([key, val]: any) => {
+        const name = offersMap[key] || (key.length > 5 ? 'Offre Inconnue' : `${key} F`)
+        return {
+            label: name,
+            value: val.count,
+            limit: val.limit,
+            percent: val.limit > 0 ? (val.count / val.limit) * 100 : val.limit === 0 ? 100 : 0,
+            status: val.reached ? 'danger' : (val.limit > 0 && val.count / val.limit > 0.8) ? 'warning' : 'success'
+        }
+    }).filter(q => q.limit >= 0)
 
     const { data: admins } = await supabase.from('users').select('id, nom, prenom, roles').not('roles', 'cs', '{"client"}')
     const { data: kycData } = await supabase.from('kyc_submissions').select('admin_id, status').gte('created_at', startDate).lte('created_at', endDate).not('admin_id', 'is', null)
