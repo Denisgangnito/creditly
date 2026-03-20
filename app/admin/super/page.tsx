@@ -121,7 +121,12 @@ export default async function SuperAdminPage({
                         <p className="text-slate-500 font-bold italic leading-relaxed">Intelligence financière et monitoring opérationnel</p>
                     </div>
 
-                    <DashboardFilters currentMonth={month} currentYear={year} currentPeriod={period} />
+                    <div className="flex flex-wrap items-center gap-4">
+                        <Link href="/admin/finance" className="px-5 py-2.5 rounded-2xl bg-blue-600/10 text-blue-500 text-[10px] font-black uppercase tracking-widest border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all italic">
+                            Audit Comptable
+                        </Link>
+                        <DashboardFilters currentMonth={month} currentYear={year} currentPeriod={period} />
+                    </div>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
@@ -177,10 +182,15 @@ export default async function SuperAdminPage({
                         </section>
 
                         <section>
-                            <h3 className="text-xl font-black text-white tracking-tighter uppercase italic flex items-center gap-3 mb-6">
-                                <span className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center text-xs font-black shadow-inner">Q</span>
-                                Santé des Quotas
-                            </h3>
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-black text-white tracking-tighter uppercase italic flex items-center gap-3">
+                                    <span className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center text-xs font-black shadow-inner">Q</span>
+                                    Santé des Quotas
+                                </h3>
+                                <Link href="/admin/super/offers" className="px-4 py-2 rounded-xl bg-slate-800 text-[9px] font-black text-slate-400 uppercase tracking-widest border border-white/5 hover:bg-slate-700 hover:text-white transition-all italic">
+                                    Modifier les Offres & Quotas
+                                </Link>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {quotasArray.map((quota, i) => (
                                     <div key={i} className="glass-panel p-6 bg-slate-900/50 border-slate-800">
