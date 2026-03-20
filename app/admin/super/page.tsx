@@ -2,9 +2,10 @@
 import { createClient } from '@/utils/supabase/server'
 import { requireAdminRole } from '@/utils/admin-security'
 import Link from 'next/link'
-import { Currency, Document, ChevronRight, Filter, CheckmarkFilled, Time, Wallet, Checkmark } from '@carbon/icons-react'
+import { Currency, Document, ChevronRight, Filter, CheckmarkFilled, Time, Wallet, Checkmark, UserMultiple, Identification, RequestQuote, Receipt } from '@carbon/icons-react'
 import { checkGlobalQuotasStatus } from '@/utils/quotas-server'
 import { AdminWithdrawalsManagement } from './WithdrawalManagement'
+import { DashboardFilters } from './DashboardFilters'
 
 export default async function SuperAdminPage({
     searchParams
@@ -18,11 +19,21 @@ export default async function SuperAdminPage({
     let params = await (searchParams instanceof Promise ? searchParams : Promise.resolve(searchParams || {}))
 
     const now = new Date()
+    const period = params.period || 'month'
     const month = params.month ? parseInt(params.month) : now.getMonth() + 1
     const year = params.year ? parseInt(params.year) : now.getFullYear()
 
-    const startDate = new Date(year, month - 1, 1).toISOString()
-    const endDate = new Date(year, month, 0, 23, 59, 59).toISOString()
+    let startDate: string;
+    let endDate: string = new Date(year, month, 0, 23, 59, 59).toISOString();
+
+    if (period === 'week') {
+        const lastWeek = new Date();
+        lastWeek.setDate(lastWeek.getDate() - 7);
+        startDate = lastWeek.toISOString();
+        endDate = new Date().toISOString();
+    } else {
+        startDate = new Date(year, month - 1, 1).toISOString();
+    }
 
     const supabase = await createClient()
 
@@ -30,7 +41,7 @@ export default async function SuperAdminPage({
     const { data: monthlySubs } = await supabase.from('user_subscriptions').select('*, plan:abonnements(price)').eq('status', 'active').gte('created_at', startDate).lte('created_at', endDate)
     const monthlyRevenue = monthlySubs?.reduce((acc, sub: any) => acc + (Number(sub.plan?.price) || 0), 0) || 0
 
-    const { data: allRemboursements } = await supabase.from('remboursements').select('surplus_amount').eq('status', 'verified')
+    const { data: allRemboursements } = await supabase.from('remboursements').select('surplus_amount').eq('status', 'verified').gte('created_at', startDate).lte('created_at', endDate)
     const totalPenaltiesCollected = allRemboursements?.reduce((acc, r) => acc + (Number(r.surplus_amount) || 0), 0) || 0
 
     const { data: allActiveLoans } = await supabase.from('prets').select('amount, amount_paid').in('status', ['active', 'overdue'])
@@ -39,31 +50,32 @@ export default async function SuperAdminPage({
     const totalRemainingToRecover = totalActiveCapital - totalAlreadyRecovered
 
     const FEE_START_DATE = new Date('2026-03-09T00:00:00')
-    const { data: loansWithFees } = await supabase.from('prets').select('admin_id, created_at, status').gte('created_at', FEE_START_DATE.toISOString()).in('status', ['approved', 'active', 'paid', 'overdue'])
-    const totalFeesCollected = (loansWithFees?.length || 0) * 500
-    const monthlyFeesRevenue = (loansWithFees?.filter(l => new Date(l.created_at) >= new Date(startDate) && new Date(l.created_at) <= new Date(endDate)).length || 0) * 500
+    const { data: allLoansWithPossibleFees } = await supabase.from('prets').select('admin_id, created_at, status').gte('created_at', FEE_START_DATE.toISOString())
+
+    // Total Gain Dossier (Filter Only Paid)
+    const totalFeesCollected = (allLoansWithPossibleFees?.filter(l => l.status === 'paid').length || 0) * 200
+    // Gain Dossier for selected period
+    const monthlyFeesRevenue = (allLoansWithPossibleFees?.filter(l => l.status === 'paid' && new Date(l.created_at) >= new Date(startDate) && new Date(l.created_at) <= new Date(endDate)).length || 0) * 200
 
     const { count: pendingKyc } = await supabase.from('kyc_submissions').select('*', { count: 'exact', head: true }).eq('status', 'pending')
     const { count: pendingLoans } = await supabase.from('prets').select('*', { count: 'exact', head: true }).eq('status', 'pending')
     const { count: pendingSubs } = await supabase.from('user_subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'pending')
     const { count: pendingRepayments } = await supabase.from('remboursements').select('*', { count: 'exact', head: true }).eq('status', 'pending')
 
-    // QUOTAS Logic Fix (Record to Array)
-    const quotasRecord = await checkGlobalQuotasStatus()
-    const quotasArray = Object.entries(quotasRecord || {}).map(([key, val]) => ({
+    const globalQuotas = await checkGlobalQuotasStatus()
+    const quotasArray = Object.entries(globalQuotas || {}).map(([key, val]: any) => ({
         label: key.includes('-') || key.length > 10 ? 'Plan System' : `${key} F`,
         value: val.count,
         limit: val.limit,
         percent: val.limit > 0 ? (val.count / val.limit) * 100 : val.limit === 0 ? 100 : 0,
         status: val.reached ? 'danger' : (val.limit > 0 && val.count / val.limit > 0.8) ? 'warning' : 'success'
-    })).filter(q => q.limit >= 0) // Only show plans with limits
+    })).filter(q => q.limit >= 0)
 
     const { data: admins } = await supabase.from('users').select('id, nom, prenom, roles').not('roles', 'cs', '{"client"}')
-    const { data: kycData } = await supabase.from('kyc_submissions').select('admin_id, status').not('admin_id', 'is', null)
-    const { data: loanData } = await supabase.from('prets').select('admin_id, status, created_at').not('admin_id', 'is', null)
-    const { data: repaymentData } = await supabase.from('remboursements').select('admin_id, status').not('admin_id', 'is', null)
+    const { data: kycData } = await supabase.from('kyc_submissions').select('admin_id, status').gte('created_at', startDate).lte('created_at', endDate).not('admin_id', 'is', null)
+    const { data: loanData } = await supabase.from('prets').select('admin_id, status, created_at').gte('created_at', startDate).lte('created_at', endDate).not('admin_id', 'is', null)
+    const { data: repaymentData } = await supabase.from('remboursements').select('admin_id, status').gte('created_at', startDate).lte('created_at', endDate).not('admin_id', 'is', null)
 
-    // JOINS FIX: admin:admin_id explicitly
     const { data: totalCommissions, error: errComm } = await supabase.from('admin_commissions').select('admin_id, amount, loan:loan_id(status), type')
     const { data: pendingWithdrawals, error: errWith } = await supabase.from('admin_withdrawals').select('*, admin:admin_id(nom, prenom, email, roles)').eq('status', 'pending').order('created_at', { ascending: false })
 
@@ -71,7 +83,7 @@ export default async function SuperAdminPage({
         return (
             <div className="py-20 text-center">
                 <h1 className="text-2xl font-black text-red-500 mb-4 tracking-tighter uppercase italic">ERREUR DE CHARGEMENT</h1>
-                <p className="text-slate-500 italic max-w-lg mx-auto mb-8">Certaines tables système (commissions/retraits) sont manquantes ou inaccessibles.</p>
+                <p className="text-slate-500 italic max-w-lg mx-auto mb-8">Certaines tables système sont inaccessibles.</p>
                 <div className="p-6 bg-slate-900 border border-red-500/20 rounded-2xl inline-block text-left font-mono text-xs text-red-400">
                     {errComm?.message || errWith?.message}
                 </div>
@@ -82,10 +94,17 @@ export default async function SuperAdminPage({
     const adminPerformance = admins?.map((admin: any) => {
         const kycCount = kycData?.filter(a => a.admin_id === admin.id).length || 0
         const loanCountRaw = loanData?.filter(a => a.admin_id === admin.id) || []
-        const loanCount = loanCountRaw.filter(l => ['approved', 'active', 'paid', 'overdue'].includes(l.status)).length
+        const loanCountTotal = loanCountRaw.length
+        const loanApprovedCount = loanCountRaw.filter(l => ['approved', 'active', 'paid', 'overdue'].includes(l.status)).length
         const totalRealizedGains = totalCommissions?.filter((c: any) => c.admin_id === admin.id && (c.loan?.status === 'paid' || c.type === 'repayment_reward')).reduce((acc, c) => acc + Number(c.amount), 0) || 0
         const repaymentCount = repaymentData?.filter(a => a.admin_id === admin.id).length || 0
-        return { ...admin, totalActions: kycCount + loanCount + repaymentCount, totalEarnings: totalRealizedGains, details: { kycCount, loanCount, repaymentCount } }
+
+        return {
+            ...admin,
+            totalActions: kycCount + loanCountTotal + repaymentCount,
+            totalEarnings: totalRealizedGains,
+            details: { kycCount, loanCount: loanCountTotal, loanApprovedCount, repaymentCount }
+        }
     }).sort((a: any, b: any) => (b.totalActions || 0) - (a.totalActions || 0)) || []
 
     return (
@@ -102,21 +121,14 @@ export default async function SuperAdminPage({
                         <p className="text-slate-500 font-bold italic leading-relaxed">Intelligence financière et monitoring opérationnel</p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 bg-slate-900/50 p-2 rounded-2xl border border-slate-800 backdrop-blur-xl">
-                        <div className="flex bg-slate-800 rounded-xl px-4 py-2 text-slate-400 font-black text-[10px] uppercase tracking-widest italic items-center gap-2">
-                            <Time size={14} /> {new Date(0, month - 1).toLocaleString('fr', { month: 'long' })} {year}
-                        </div>
-                        <Link href="/admin/finance" className="px-6 py-2.5 rounded-xl bg-blue-600/10 text-blue-500 text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-500/20">
-                            Ledger Financier
-                        </Link>
-                    </div>
+                    <DashboardFilters currentMonth={month} currentYear={year} currentPeriod={period} />
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
                     {[
-                        { label: 'Revenue Mensuel', value: monthlyRevenue + monthlyFeesRevenue, color: 'text-emerald-400', sub: `Subs + ${monthlyFeesRevenue.toLocaleString()} F frais`, icon: <Currency size={20} /> },
-                        { label: 'Admin Gain (Dossiers)', value: totalFeesCollected, color: 'text-blue-400', sub: 'Volume total frais générés', icon: <Time size={20} /> },
-                        { label: 'Volume Pénalités', value: totalPenaltiesCollected, color: 'text-blue-400', sub: 'Surplus perçus par Creditly', icon: <Wallet size={20} /> },
+                        { label: 'Revenue Période', value: monthlyRevenue + monthlyFeesRevenue, color: 'text-emerald-400', sub: `Subs + ${monthlyFeesRevenue.toLocaleString()} F frais`, icon: <Currency size={20} /> },
+                        { label: 'Admin Gain (Total)', value: totalFeesCollected, color: 'text-blue-400', sub: 'Sur dossiers remboursés', icon: <Time size={20} /> },
+                        { label: 'Volume Pénalités', value: totalPenaltiesCollected, color: 'text-blue-400', sub: 'Surplus perçus périodiquement', icon: <Wallet size={20} /> },
                         { label: 'Dette Totale', value: totalRemainingToRecover, color: 'text-red-400', sub: 'À récupérer sur prêts actifs', icon: <Document size={20} /> }
                     ].map((kpi, i) => (
                         <div key={i} className="glass-panel p-6 bg-slate-900/50 border-slate-800 flex flex-col justify-between group hover:border-blue-500/30 transition-all shadow-xl">
@@ -194,7 +206,7 @@ export default async function SuperAdminPage({
                         <section>
                             <h3 className="text-xl font-black text-white tracking-tighter uppercase italic flex items-center gap-3 mb-6">
                                 <span className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center justify-center text-xs font-black shadow-inner">P</span>
-                                Performance & Gains
+                                Activité des Admins
                             </h3>
                             <div className="space-y-3">
                                 {adminPerformance.map((admin: any, i: number) => (
@@ -210,11 +222,22 @@ export default async function SuperAdminPage({
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <div className="flex items-center gap-1 justify-end text-emerald-500">
-                                                    <Checkmark size={12} />
-                                                    <p className="text-lg font-black italic tracking-tighter leading-none">{(admin.totalEarnings || 0).toLocaleString()} F</p>
-                                                </div>
-                                                <p className="text-[8px] font-black text-slate-700 uppercase tracking-widest italic">Gains Réalisés</p>
+                                                <p className="text-lg font-black italic tracking-tighter leading-none text-white">{admin.totalActions}</p>
+                                                <p className="text-[8px] font-black text-slate-700 uppercase tracking-widest italic">Actions Période</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-4">
+                                            <div className="text-center">
+                                                <p className="text-xs font-black text-white italic">{admin.details.kycCount}</p>
+                                                <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest">KYC</p>
+                                            </div>
+                                            <div className="text-center border-x border-white/5">
+                                                <p className="text-xs font-black text-white italic">{admin.details.loanApprovedCount}</p>
+                                                <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Prêts</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-xs font-black text-white italic">{admin.details.repaymentCount}</p>
+                                                <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Remb.</p>
                                             </div>
                                         </div>
                                     </div>
