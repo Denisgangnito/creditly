@@ -141,7 +141,30 @@ export default async function FinanceAuditPage({
         })
     })
 
+    const { data: allRembTotal } = await supabase.from('remboursements').select('amount, surplus_amount').eq('status', 'verified')
+    const { data: allSubsTotal } = await supabase.from('user_subscriptions').select('plan:abonnements(price)').eq('status', 'active')
+    const { data: allLoansTotal } = await supabase.from('prets').select('amount').in('status', ['approved', 'active', 'paid', 'overdue'])
+    const { data: allWithTotal } = await supabase.from('admin_withdrawals').select('amount').eq('status', 'approved')
+
+    // CASH RECONCILIATION (Flux réels d'argent entrant/sortant)
+    const totalCashIn = (allRembTotal?.reduce((acc, r) => acc + Number(r.amount) + (Number(r.surplus_amount) || 0), 0) || 0) +
+                       (allSubsTotal?.reduce((acc, s: any) => acc + Number(s.plan?.price || 0), 0) || 0)
+    
+    const totalCashOut = (allLoansTotal?.reduce((acc, l) => acc + Number(l.amount), 0) || 0) +
+                        (allWithTotal?.reduce((acc, w) => acc + Number(w.amount), 0) || 0)
+    
+    const theoreticalCashBalance = totalCashIn - totalCashOut
+
     const sortedJournal = journal.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 100)
+
+    const { data: allLoans, error: errLoans } = await supabase.from('prets').select('*').in('status', ['approved', 'active', 'paid', 'overdue'])
+
+    // Calculs "Expert Comptable"
+    const capitalPrete = allLoans?.reduce((acc, l) => acc + Number(l.amount), 0) || 0
+    const totalAttendu = allLoans?.reduce((acc, l) => acc + (Number(l.total_to_pay) || Number(l.amount) + 500), 0) || 0
+    const dejaRecouvre = allLoans?.reduce((acc, l) => acc + (Number(l.amount_paid) || 0), 0) || 0
+    const resteARecouvrer = totalAttendu - dejaRecouvre
+    const margeProjetee = totalAttendu - capitalPrete
 
     const totalWithdrawals = withdrawals?.filter(w => w.status === 'approved').reduce((acc, w) => acc + Number(w.amount), 0) || 0
     const totalCommissionsValue = commissions?.reduce((acc, c) => acc + Number(c.amount), 0) || 0
@@ -156,49 +179,110 @@ export default async function FinanceAuditPage({
                             <span className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
                                 <Currency size={24} />
                             </span>
-                            <h1 className="text-4xl md:text-5xl font-black premium-gradient-text tracking-tight uppercase italic">Ledger Financier</h1>
+                            <h1 className="text-4xl md:text-5xl font-black premium-gradient-text tracking-tight uppercase italic">Audit Comptable</h1>
                         </div>
-                        <p className="text-slate-500 font-bold italic leading-relaxed">Audit complet des flux monétaires et profits plateforme.</p>
+                        <p className="text-slate-500 font-bold italic leading-relaxed">Vision experte du capital, des marges et du recouvrement.</p>
                     </div>
 
                     <DashboardFilters currentMonth={month} currentYear={year} currentPeriod={period} />
                 </header>
 
+                {/* CASH RECONCILIATION BANNER */}
+                <div className="mb-12 p-8 bg-blue-600 rounded-[2rem] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[100px] -mr-20 -mt-20 group-hover:scale-125 transition-transform duration-1000"></div>
+                    <div className="relative z-10">
+                        <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-2 italic flex items-center gap-2">
+                             <CheckmarkFilled size={14} /> Solde Théorique des Comptes Mobile Money
+                        </p>
+                        <h2 className="text-5xl font-black text-white italic tracking-tighter">
+                            {theoreticalCashBalance.toLocaleString()} <span className="text-sm uppercase not-italic">FCFA</span>
+                        </h2>
+                        <p className="text-[9px] text-blue-100 font-bold mt-2 italic uppercase">Ce qui devrait être dans vos caisses actuellement</p>
+                    </div>
+                    <div className="flex gap-4 relative z-10">
+                        <div className="bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 group-hover:bg-white/15 transition-all">
+                            <p className="text-[9px] font-black text-blue-200 uppercase tracking-widest mb-1 italic">Total Reçu (In)</p>
+                            <p className="text-xl font-black text-white italic tracking-tighter">+{totalCashIn.toLocaleString()} F</p>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 group-hover:bg-white/15 transition-all">
+                            <p className="text-[9px] font-black text-blue-200 uppercase tracking-widest mb-1 italic">Total Décaissé (Out)</p>
+                            <p className="text-xl font-black text-white italic tracking-tighter">-{totalCashOut.toLocaleString()} F</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* KPI Section 1: Capital & Marge */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 flex flex-col justify-between group hover:border-blue-500/30 transition-all shadow-xl">
+                        <div>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 italic">Capital Prêté (Sorti)</p>
+                            <p className="text-2xl font-black text-white italic tracking-tighter">
+                                {capitalPrete.toLocaleString('fr-FR')} <span className="text-[10px] uppercase ml-1 not-italic">F</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 flex flex-col justify-between group hover:border-emerald-500/30 transition-all shadow-xl">
+                        <div>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 italic">Intérêts & Frais (Marge)</p>
+                            <p className="text-2xl font-black text-emerald-500 italic tracking-tighter">
+                                {margeProjetee.toLocaleString('fr-FR')} <span className="text-[10px] uppercase ml-1 not-italic">F</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 flex flex-col justify-between group hover:border-amber-500/30 transition-all shadow-xl">
+                        <div>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 italic">Déjà Recouvré</p>
+                            <p className="text-2xl font-black text-amber-500 italic tracking-tighter">
+                                {dejaRecouvre.toLocaleString('fr-FR')} <span className="text-[10px] uppercase ml-1 not-italic">F</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div className="glass-panel p-6 bg-red-600/10 border-red-500/20 flex flex-col justify-between group hover:border-red-500 transition-all shadow-xl">
+                        <div>
+                            <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 italic">Reste à Recouvrer</p>
+                            <p className="text-2xl font-black text-white italic tracking-tighter">
+                                {resteARecouvrer.toLocaleString('fr-FR')} <span className="text-[10px] uppercase ml-1 not-italic">F</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* KPI Section 2: Flux Plateforme */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
                     <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 flex flex-col justify-between group hover:border-emerald-500/30 transition-all shadow-2xl relative overflow-hidden">
                         <div>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 italic">Revenus Bruts</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 italic">Revenus Encaissés</p>
                             <p className="text-3xl font-black text-white italic tracking-tighter">
                                 {totalRevenue.toLocaleString('fr-FR')} <span className="text-xs ml-1 uppercase not-italic">F</span>
                             </p>
-                            <p className="text-[9px] text-slate-700 font-black mt-2 italic uppercase">Abonnements + Dossiers + Pénalités</p>
+                            <p className="text-[9px] text-slate-700 font-black mt-2 italic uppercase">Abonnements + Dossiers Remboursés</p>
                         </div>
                     </div>
                     <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 flex flex-col justify-between group hover:border-blue-500/30 transition-all shadow-2xl relative overflow-hidden">
                         <div>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 italic">Charge Commissions</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 italic">Dettes Commissions</p>
                             <p className="text-3xl font-black text-blue-500 italic tracking-tighter">
                                 {totalCommissionsValue.toLocaleString('fr-FR')} <span className="text-xs ml-1 uppercase not-italic">F</span>
                             </p>
-                            <p className="text-[9px] text-slate-700 font-black mt-2 italic uppercase">Dû aux agents (Payé ou Provisionné)</p>
+                            <p className="text-[9px] text-slate-700 font-black mt-2 italic uppercase">Dû aux agents</p>
                         </div>
                     </div>
                     <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 flex flex-col justify-between group hover:border-red-500/30 transition-all shadow-2xl relative overflow-hidden">
                         <div>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 italic">Retraits Payés</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 italic">Sorties de Caisse</p>
                             <p className="text-3xl font-black text-red-500 italic tracking-tighter">
                                 {totalWithdrawals.toLocaleString('fr-FR')} <span className="text-xs ml-1 uppercase not-italic">F</span>
                             </p>
-                            <p className="text-[9px] text-slate-700 font-black mt-2 italic uppercase">Cash sorti de la caisse</p>
+                            <p className="text-[9px] text-slate-700 font-black mt-2 italic uppercase">Retraits validés</p>
                         </div>
                     </div>
                     <div className="glass-panel p-6 bg-blue-600/10 border-blue-500/30 flex flex-col justify-between group hover:border-blue-500 transition-all shadow-2xl relative overflow-hidden">
                         <div>
-                            <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 italic">Profit Net Estimé</p>
+                            <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 italic">Profit Net Réel</p>
                             <p className="text-3xl font-black text-white italic tracking-tighter">
                                 {netProfit.toLocaleString('fr-FR')} <span className="text-xs ml-1 uppercase not-italic">F</span>
                             </p>
-                            <p className="text-[9px] text-slate-500 font-black mt-2 italic uppercase">Ce qu'il reste à la plateforme</p>
+                            <p className="text-[9px] text-slate-500 font-black mt-2 italic uppercase">Solde après commissions</p>
                         </div>
                     </div>
                 </div>
