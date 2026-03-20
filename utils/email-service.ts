@@ -142,13 +142,14 @@ export async function sendAdminNotification(type: NotificationType, data: Notifi
     }
 }
 
-type UserNotificationType = 'KYC_APPROVED' | 'KYC_REJECTED' | 'LOAN_APPROVED' | 'LOAN_REJECTED' | 'LOAN_ACTIVE' | 'REPAYMENT_VALIDATED' | 'REPAYMENT_REJECTED';
+type UserNotificationType = 'KYC_APPROVED' | 'KYC_REJECTED' | 'LOAN_APPROVED' | 'LOAN_REJECTED' | 'LOAN_ACTIVE' | 'REPAYMENT_VALIDATED' | 'REPAYMENT_REJECTED' | 'SUBSCRIPTION';
 
 interface UserEmailData {
     email: string;
     name: string;
     details?: string;
     amount?: number;
+    planName?: string;
 }
 
 export async function sendUserEmail(type: UserNotificationType, data: UserEmailData) {
@@ -247,6 +248,19 @@ export async function sendUserEmail(type: UserNotificationType, data: UserEmailD
                     <p>Bonjour ${data.name},</p>
                     <p>La preuve de paiement que vous avez fournie n'a pas pu être validée.</p>
                     <p>Merci de vérifier les informations et de contacter le support si vous pensez qu'il s'agit d'une erreur.</p>
+                </div>
+            `;
+            break;
+
+        case 'SUBSCRIPTION':
+            subject = `✨ Abonnement Activé - ${data.planName || 'Creditly'}`;
+            html = `
+                <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                    <h2 style="color: ${colors.success}; text-transform: uppercase; font-size: 18px;">Abonnement Confirmé</h2>
+                    <p>Bonjour ${data.name},</p>
+                    <p>Votre abonnement <strong>${data.planName || ''}</strong> est désormais actif.</p>
+                    <p>Vous avez maintenant accès à toutes les fonctionnalités de votre offre.</p>
+                    <a href="${process.env.NEXT_PUBLIC_SITE_URL}/client/dashboard" style="display: inline-block; background-color: ${colors.success}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px;">Accéder à Creditly Elite</a>
                 </div>
             `;
             break;

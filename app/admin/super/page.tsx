@@ -15,14 +15,11 @@ export default async function SuperAdminPage({
     await requireAdminRole(['superadmin', 'admin_comptable', 'owner'])
 
     // Safety check for searchParams (handling both Sync/Async for Next v14/15)
-    let params = searchParams || {}
-    if (params instanceof Promise) {
-        params = await params
-    }
+    let params = await (searchParams instanceof Promise ? searchParams : Promise.resolve(searchParams || {}))
 
     const now = new Date()
-    const month = (params as any).month ? parseInt((params as any).month) : now.getMonth() + 1
-    const year = (params as any).year ? parseInt((params as any).year) : now.getFullYear()
+    const month = params.month ? parseInt(params.month) : now.getMonth() + 1
+    const year = params.year ? parseInt(params.year) : now.getFullYear()
 
     const startDate = new Date(year, month - 1, 1).toISOString()
     const endDate = new Date(year, month, 0, 23, 59, 59).toISOString()
@@ -51,23 +48,43 @@ export default async function SuperAdminPage({
     const { count: pendingSubs } = await supabase.from('user_subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'pending')
     const { count: pendingRepayments } = await supabase.from('remboursements').select('*', { count: 'exact', head: true }).eq('status', 'pending')
 
-    const globalQuotas = await checkGlobalQuotasStatus()
+    // QUOTAS Logic Fix (Record to Array)
+    const quotasRecord = await checkGlobalQuotasStatus()
+    const quotasArray = Object.entries(quotasRecord || {}).map(([key, val]) => ({
+        label: key.includes('-') || key.length > 10 ? 'Plan System' : `${key} F`,
+        value: val.count,
+        limit: val.limit,
+        percent: val.limit > 0 ? (val.count / val.limit) * 100 : val.limit === 0 ? 100 : 0,
+        status: val.reached ? 'danger' : (val.limit > 0 && val.count / val.limit > 0.8) ? 'warning' : 'success'
+    })).filter(q => q.limit >= 0) // Only show plans with limits
 
     const { data: admins } = await supabase.from('users').select('id, nom, prenom, roles').not('roles', 'cs', '{"client"}')
-    const kycActions = await supabase.from('kyc_submissions').select('admin_id, status').not('admin_id', 'is', null)
-    const loanActions = await supabase.from('prets').select('admin_id, status, created_at').not('admin_id', 'is', null)
-    const repaymentActions = await supabase.from('remboursements').select('admin_id, status').not('admin_id', 'is', null)
+    const { data: kycData } = await supabase.from('kyc_submissions').select('admin_id, status').not('admin_id', 'is', null)
+    const { data: loanData } = await supabase.from('prets').select('admin_id, status, created_at').not('admin_id', 'is', null)
+    const { data: repaymentData } = await supabase.from('remboursements').select('admin_id, status').not('admin_id', 'is', null)
 
-    // JOINS FIX: admin:admin_id instead of admin:users
-    const { data: totalCommissions } = await supabase.from('admin_commissions').select('admin_id, amount, loan:loan_id(status), type')
-    const { data: pendingWithdrawals } = await supabase.from('admin_withdrawals').select('*, admin:admin_id(nom, prenom, email, roles)').eq('status', 'pending').order('created_at', { ascending: false })
+    // JOINS FIX: admin:admin_id explicitly
+    const { data: totalCommissions, error: errComm } = await supabase.from('admin_commissions').select('admin_id, amount, loan:loan_id(status), type')
+    const { data: pendingWithdrawals, error: errWith } = await supabase.from('admin_withdrawals').select('*, admin:admin_id(nom, prenom, email, roles)').eq('status', 'pending').order('created_at', { ascending: false })
+
+    if (errComm || errWith) {
+        return (
+            <div className="py-20 text-center">
+                <h1 className="text-2xl font-black text-red-500 mb-4 tracking-tighter uppercase italic">ERREUR DE CHARGEMENT</h1>
+                <p className="text-slate-500 italic max-w-lg mx-auto mb-8">Certaines tables système (commissions/retraits) sont manquantes ou inaccessibles.</p>
+                <div className="p-6 bg-slate-900 border border-red-500/20 rounded-2xl inline-block text-left font-mono text-xs text-red-400">
+                    {errComm?.message || errWith?.message}
+                </div>
+            </div>
+        )
+    }
 
     const adminPerformance = admins?.map((admin: any) => {
-        const kycCount = kycActions.data?.filter(a => a.admin_id === admin.id).length || 0
-        const loanCountRaw = loanActions.data?.filter(a => a.admin_id === admin.id) || []
+        const kycCount = kycData?.filter(a => a.admin_id === admin.id).length || 0
+        const loanCountRaw = loanData?.filter(a => a.admin_id === admin.id) || []
         const loanCount = loanCountRaw.filter(l => ['approved', 'active', 'paid', 'overdue'].includes(l.status)).length
         const totalRealizedGains = totalCommissions?.filter((c: any) => c.admin_id === admin.id && (c.loan?.status === 'paid' || c.type === 'repayment_reward')).reduce((acc, c) => acc + Number(c.amount), 0) || 0
-        const repaymentCount = repaymentActions.data?.filter(a => a.admin_id === admin.id).length || 0
+        const repaymentCount = repaymentData?.filter(a => a.admin_id === admin.id).length || 0
         return { ...admin, totalActions: kycCount + loanCount + repaymentCount, totalEarnings: totalRealizedGains, details: { kycCount, loanCount, repaymentCount } }
     }).sort((a: any, b: any) => (b.totalActions || 0) - (a.totalActions || 0)) || []
 
@@ -153,7 +170,7 @@ export default async function SuperAdminPage({
                                 Santé des Quotas
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {(globalQuotas || []).map((quota, i) => (
+                                {quotasArray.map((quota, i) => (
                                     <div key={i} className="glass-panel p-6 bg-slate-900/50 border-slate-800">
                                         <div className="flex justify-between items-end mb-4">
                                             <div>
@@ -161,7 +178,7 @@ export default async function SuperAdminPage({
                                                 <p className="text-lg font-black text-white italic tracking-tighter uppercase">{quota.value} / {quota.limit}</p>
                                             </div>
                                             <p className={`text-xl font-black italic ${quota.status === 'danger' ? 'text-red-500' : quota.status === 'warning' ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                                {Math.round(quota.percent)}%
+                                                {Math.round(quota.percent || 0)}%
                                             </p>
                                         </div>
                                         <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5">
@@ -189,13 +206,13 @@ export default async function SuperAdminPage({
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-black text-white italic uppercase tracking-tight">{admin.prenom} {admin.nom}</p>
-                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">{admin.roles?.[0]?.replace('admin_', '')}</p>
+                                                    <p className="text-[9px] font-black text-slate-700 tracking-widest italic">{admin.roles?.[0]?.replace('admin_', '')}</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
                                                 <div className="flex items-center gap-1 justify-end text-emerald-500">
                                                     <Checkmark size={12} />
-                                                    <p className="text-lg font-black italic tracking-tighter leading-none">{admin.totalEarnings.toLocaleString()} F</p>
+                                                    <p className="text-lg font-black italic tracking-tighter leading-none">{(admin.totalEarnings || 0).toLocaleString()} F</p>
                                                 </div>
                                                 <p className="text-[8px] font-black text-slate-700 uppercase tracking-widest italic">Gains Réalisés</p>
                                             </div>
@@ -204,16 +221,6 @@ export default async function SuperAdminPage({
                                 ))}
                             </div>
                         </section>
-
-                        <div className="glass-panel p-6 bg-blue-600/5 border-blue-500/10 flex flex-col items-center justify-center text-center space-y-4">
-                            <div className="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/10">
-                                <Wallet size={20} />
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest italic">Note Système</p>
-                                <p className="text-xs font-bold text-slate-400 leading-relaxed italic">Les gains sont provisionnés jusqu'au remboursement effectif du client.</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
