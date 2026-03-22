@@ -226,7 +226,7 @@ export async function updateLoanStatus(loanId: string, status: 'approved' | 'rej
             const kycAdminId = kyc?.admin_id
             const loanAdminId = adminId
 
-            const fee = Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)
+            const fee = Number(loan.service_fee) || (new Date(loan.created_at!) >= new Date('2026-03-09') ? 500 : 0)
 
             if (fee >= 500 && (kycAdminId || loanAdminId)) {
                 const commissions = []
@@ -328,7 +328,7 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
 
         if (loan) {
             const currentPaid = Number(loan.amount_paid) || 0
-            const fee = Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)
+            const fee = Number(loan.service_fee) || (new Date(loan.created_at!) >= new Date('2026-03-09') ? 500 : 0)
             const totalLoanAmount = Number(loan.amount) + fee
             const remainingToPay = Math.max(0, totalLoanAmount - currentPaid)
 
@@ -370,8 +370,6 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
                 .select('*', { count: 'exact', head: true })
                 .eq('loan_id', repayment.loan_id)
                 .eq('type', 'repayment_reward')
-
-            const fee = Number(loan.service_fee) || (new Date(loan.created_at!) >= new Date('2026-03-09') ? 500 : 0)
 
             if ((count || 0) === 0 && adminId && fee >= 500) {
                 await supabase.from('admin_commissions').insert({
