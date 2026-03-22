@@ -226,7 +226,9 @@ export async function updateLoanStatus(loanId: string, status: 'approved' | 'rej
             const kycAdminId = kyc?.admin_id
             const loanAdminId = adminId
 
-            if (kycAdminId || loanAdminId) {
+            const fee = Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)
+
+            if (fee >= 500 && (kycAdminId || loanAdminId)) {
                 const commissions = []
                 const feeShare = 100 // 100 for KYC, 100 for Loan, 100 for Repayment (later)
 
@@ -362,14 +364,16 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
             }
 
             // --- REPAYMENT COMMISSION ---
-            // On donne 100 F à celui qui valide le remboursement (une seule fois par prêt pour éviter les abus)
+            // On donne 100 F à celui qui valide le remboursement (seulement si le prêt a des frais de 500 F)
             const { count } = await supabase
                 .from('admin_commissions')
                 .select('*', { count: 'exact', head: true })
                 .eq('loan_id', repayment.loan_id)
                 .eq('type', 'repayment_reward')
 
-            if ((count || 0) === 0 && adminId) {
+            const fee = Number(loan.service_fee) || (new Date(loan.created_at!) >= new Date('2026-03-09') ? 500 : 0)
+
+            if ((count || 0) === 0 && adminId && fee >= 500) {
                 await supabase.from('admin_commissions').insert({
                     loan_id: repayment.loan_id,
                     admin_id: adminId,

@@ -24,6 +24,7 @@ interface LoanRow {
         profession?: string;
     } | null;
     amount: number;
+    service_fee?: number;
     amount_paid: number;
     plan: string;
     date: string;
@@ -106,6 +107,8 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
             const amount = row.amount || 0;
             const dateStr = row.date || new Date().toISOString();
 
+            const fee = row.service_fee || 0;
+
             const doc = (
                 <LoanPDFDocument
                     userData={{
@@ -125,7 +128,7 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                         birthDate: row.borrower_birth_date || row.profile.birth_date || ''
                     }}
                     signature={row.waiver_signed_at ? `${prenom} ${nom}` : (row.status === 'active' || row.status === 'paid' ? `${prenom} ${nom}` : '')}
-                    amountInWords={numberToFrench(new Date(dateStr) >= new Date('2026-03-09T00:00:00') ? amount + 500 : amount)}
+                    amountInWords={numberToFrench(amount + fee)}
                     repaymentNumber={repaymentPhones[row.payout_network as keyof typeof repaymentPhones] || repaymentPhones.MTN}
                     applicationDate={dateStr}
                 />
@@ -220,7 +223,8 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <p className="text-[10px] font-black text-white italic tracking-tighter uppercase mb-2">Total : {row.amount ? row.amount.toLocaleString('fr-FR') : '0'} FCFA</p>
+                                    <p className="text-[10px] font-black text-white italic tracking-tighter uppercase mb-1">Total : {row.amount ? (row.amount + (row.service_fee || 0)).toLocaleString('fr-FR') : '0'} FCFA</p>
+                                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-tight">{(row.amount || 0).toLocaleString()} Capital + {(row.service_fee || 0).toLocaleString()} Frais</p>
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className="px-3 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-xs font-black uppercase tracking-widest border border-blue-500/20 italic">
@@ -366,8 +370,8 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Montant demandé</p>
-                                <p className="font-black text-white text-2xl tracking-tighter italic leading-none">{row.amount.toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600 tracking-normal uppercase">FCFA</span></p>
+                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Montant à rembourser</p>
+                                <p className="font-black text-white text-2xl tracking-tighter italic leading-none">{(row.amount + (row.service_fee || 0)).toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600 tracking-normal uppercase">FCFA</span></p>
                             </div>
                             <div className="space-y-2">
                                 <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Réception ({row.payout_network})</p>
@@ -515,17 +519,17 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Montant Principal</span>
                                             <span className="text-lg font-black text-slate-900 italic tracking-tighter">{viewWaiver.amount.toLocaleString('fr-FR')} FCFA</span>
                                         </div>
-                                        {new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') && (
+                                        {viewWaiver.service_fee! >= 500 && (
                                             <div className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100 opacity-80">
                                                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Frais de dossier</span>
-                                                <span className="text-sm font-black text-blue-600 italic">500 FCFA</span>
+                                                <span className="text-sm font-black text-blue-600 italic">{viewWaiver.service_fee} FCFA</span>
                                             </div>
                                         )}
                                         <div className="flex justify-between items-center bg-blue-50 p-3 rounded-xl border border-blue-100">
                                             <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Total à Rembourser</span>
-                                            <span className="text-xl font-black text-slate-900 italic tracking-tighter">{(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toLocaleString('fr-FR')} FCFA</span>
+                                            <span className="text-xl font-black text-slate-900 italic tracking-tighter">{(viewWaiver.amount + (viewWaiver.service_fee || 0)).toLocaleString('fr-FR')} FCFA</span>
                                         </div>
-                                        {new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') && (
+                                        {viewWaiver.service_fee! >= 500 && (
                                             <p className="text-[10px] text-slate-500 leading-relaxed italic border-l-2 border-red-500/50 pl-2">
                                                 "Tout versement supérieur à ce montant sera considéré comme une pénalité de traitement non-remboursable."
                                             </p>
@@ -616,10 +620,10 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
 
                             <div className="text-center p-8 bg-gray-50 border-4 border-double border-black">
                                 <div className="font-black text-4xl italic tracking-tighter mb-2">
-                                    {(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toLocaleString('fr-FR')} FCFA
+                                    {(viewWaiver.amount + (viewWaiver.service_fee || 0)).toLocaleString('fr-FR')} FCFA
                                 </div>
                                 <div className="text-[10px] font-black uppercase text-gray-500 border-t border-gray-200 pt-2 inline-block px-10">
-                                    {numberToFrench(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toUpperCase()} FRANCS CFA
+                                    {numberToFrench(viewWaiver.amount + (viewWaiver.service_fee || 0)).toUpperCase()} FRANCS CFA
                                 </div>
                             </div>
 
@@ -636,7 +640,7 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                                 <p className="text-[11px] italic leading-tight">1. Le débiteur reconnaît que cette dette est certaine, liquide et exigible à l'échéance indiquée.</p>
                                 <p className="text-[11px] italic leading-tight">2. Tout retard excédant 48h après l'échéance pourra entraîner l'application de pénalités forfaitaires.</p>
                                 <p className="text-[11px] italic leading-tight">3. Le présent document constitue un titre de créance permettant d'engager toute procédure de recouvrement.</p>
-                                {new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') && (
+                                {viewWaiver.service_fee! >= 500 && (
                                     <p className="text-[11px] italic leading-tight">4. Tout versement supérieur au montant total dû est considéré comme une pénalité de traitement non-remboursable.</p>
                                 )}
                             </div>
