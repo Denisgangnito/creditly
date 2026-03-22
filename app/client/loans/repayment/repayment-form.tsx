@@ -21,7 +21,7 @@ export default function RepaymentForm({ loanId, remainingBalance }: { loanId: st
         // Check disabled to allow for penalty payments
         /*
         if (numAmount > remainingBalance) {
-            setError(`Le montant saisi (${numAmount.toLocaleString()} F) dépasse votre solde restant (${remainingBalance.toLocaleString()} F).`)
+            setError(`Le montant saisi (${numAmount.toLocaleString('fr-FR')} F) dépasse votre solde restant (${remainingBalance.toLocaleString('fr-FR')} F).`)
             return
         }
         */

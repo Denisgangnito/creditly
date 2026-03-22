@@ -111,7 +111,7 @@ export default function UserManagementTable({ rows }: { rows: Array<{ id: string
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
                                             <p className={`text-xs font-black italic ${row.debt && row.debt > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                Dette : {row.debt?.toLocaleString() || 0} F
+                                                Dette : {row.debt?.toLocaleString('fr-FR') || 0} F
                                             </p>
                                             {row.has_active_loans && (
                                                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>

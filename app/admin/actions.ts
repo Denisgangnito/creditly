@@ -322,11 +322,12 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
     // 3. Update Loan Balance if Verified
     if (status === 'verified') {
         const amountVerified = repayment.amount_declared
-        const { data: loan } = await supabase.from('prets').select('amount, amount_paid, service_fee').eq('id', repayment.loan_id).single()
+        const { data: loan } = await supabase.from('prets').select('amount, amount_paid, service_fee, created_at').eq('id', repayment.loan_id).single()
 
         if (loan) {
             const currentPaid = Number(loan.amount_paid) || 0
-            const totalLoanAmount = Number(loan.amount) + (Number(loan.service_fee) || 0)
+            const fee = Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)
+            const totalLoanAmount = Number(loan.amount) + fee
             const remainingToPay = Math.max(0, totalLoanAmount - currentPaid)
 
             let amountAppliedToLoan = amountVerified
@@ -712,11 +713,12 @@ export async function createDirectRepayment(formData: FormData) {
     }
 
     // 2. Calculate Surplus before creating repayment
-    const { data: loan } = await supabase.from('prets').select('amount, amount_paid, service_fee').eq('id', loanId).single()
+    const { data: loan } = await supabase.from('prets').select('amount, amount_paid, service_fee, created_at').eq('id', loanId).single()
     if (!loan) return { error: "Prêt introuvable." }
 
     const currentPaid = Number(loan.amount_paid) || 0
-    const totalLoanAmount = Number(loan.amount) + (Number(loan.service_fee) || 0)
+    const fee = Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)
+    const totalLoanAmount = Number(loan.amount) + fee
     const remainingToPay = Math.max(0, totalLoanAmount - currentPaid)
 
     let amountAppliedToLoan = amount

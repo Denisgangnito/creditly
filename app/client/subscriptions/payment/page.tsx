@@ -74,7 +74,7 @@ export default async function PaymentPage({
                                     <p className="text-2xl font-black text-white uppercase italic">{plan.name}</p>
                                     <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Validité : 1 mois</p>
                                 </div>
-                                <p className="text-3xl font-black text-blue-500 italic tracking-tighter">{plan.price.toLocaleString()} <span className="text-[10px] text-slate-600 not-italic uppercase">FCFA</span></p>
+                                <p className="text-3xl font-black text-blue-500 italic tracking-tighter">{plan.price.toLocaleString('fr-FR')} <span className="text-[10px] text-slate-600 not-italic uppercase">FCFA</span></p>
                             </div>
                         </div>
 

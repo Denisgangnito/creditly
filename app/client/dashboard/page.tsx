@@ -130,20 +130,20 @@ export default async function ClientDashboard() {
         })),
         ...(recentLoans?.map(l => ({
             id: `loan-${l.id}`,
-            text: l.status === 'pending' ? `Votre demande de ${((l.amount || 0) + (l.service_fee || 0)).toLocaleString()} F est en cours` :
-                l.status === 'active' ? `C'est bon ! Votre prêt de ${((l.amount || 0) + (l.service_fee || 0)).toLocaleString()} F est prêt` :
-                    l.status === 'overdue' ? `Attention : Votre prêt de ${((l.amount || 0) + (l.service_fee || 0)).toLocaleString()} F est en retard` :
-                        l.status === 'paid' ? `Bravo ! Prêt de ${((l.amount || 0) + (l.service_fee || 0)).toLocaleString()} F fini de payer` :
-                            `Désolé, votre prêt de ${((l.amount || 0) + (l.service_fee || 0)).toLocaleString()} F a été refusé`,
+            text: l.status === 'pending' ? `Votre demande de ${((l.amount || 0) + (l.service_fee || 0)).toLocaleString('fr-FR')} F est en cours` :
+                l.status === 'active' ? `C'est bon ! Votre prêt de ${((l.amount || 0) + (l.service_fee || 0)).toLocaleString('fr-FR')} F est prêt` :
+                    l.status === 'overdue' ? `Attention : Votre prêt de ${((l.amount || 0) + (l.service_fee || 0)).toLocaleString('fr-FR')} F est en retard` :
+                        l.status === 'paid' ? `Bravo ! Prêt de ${((l.amount || 0) + (l.service_fee || 0)).toLocaleString('fr-FR')} F fini de payer` :
+                            `Désolé, votre prêt de ${((l.amount || 0) + (l.service_fee || 0)).toLocaleString('fr-FR')} F a été refusé`,
             date: l.admin_decision_date || l.created_at,
             type: l.status === 'pending' ? 'pending' : 'status',
             status: l.status
         })) || []),
         ...(recentRepayments?.map(r => ({
             id: `rep-${r.id}`,
-            text: r.status === 'pending' ? `On vérifie votre reçu de ${(r.amount_declared || 0).toLocaleString()} F` :
-                r.status === 'verified' ? `Merci ! Votre paiement de ${(r.amount_declared || 0).toLocaleString()} F est reçu` :
-                    `Désolé, votre reçu de ${(r.amount_declared || 0).toLocaleString()} F a été rejeté`,
+            text: r.status === 'pending' ? `On vérifie votre reçu de ${(r.amount_declared || 0).toLocaleString('fr-FR')} F` :
+                r.status === 'verified' ? `Merci ! Votre paiement de ${(r.amount_declared || 0).toLocaleString('fr-FR')} F est reçu` :
+                    `Désolé, votre reçu de ${(r.amount_declared || 0).toLocaleString('fr-FR')} F a été rejeté`,
             date: r.validated_at || r.created_at,
             type: r.status === 'pending' ? 'pending' : 'status',
             status: r.status
@@ -264,7 +264,7 @@ export default async function ClientDashboard() {
                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-4">Mon Prêt</p>
                             <div className="space-y-4">
                                 <div className="flex items-baseline justify-between gap-2">
-                                    <span className="text-xl font-black text-white italic truncate">{latestLoan ? `${((latestLoan.amount || 0) + (latestLoan.service_fee || 0)).toLocaleString()} F` : 'N/A'}</span>
+                                    <span className="text-xl font-black text-white italic truncate">{latestLoan ? `${((latestLoan.amount || 0) + (latestLoan.service_fee || 0)).toLocaleString('fr-FR')} F` : 'À définir'}</span>
                                     <span className={`px-2 py-1 rounded text-[8px] font-black uppercase tracking-tighter ${latestLoan?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' :
                                         latestLoan?.status === 'overdue' ? (loansWithPendingPayments.has(latestLoan.id) ? 'bg-amber-500/10 text-amber-500' : 'bg-red-500/10 text-red-500 animate-pulse') :
                                             latestLoan?.status === 'pending' ? 'bg-amber-500/10 text-amber-500' :
@@ -291,7 +291,7 @@ export default async function ClientDashboard() {
                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-4">Mon Paiement</p>
                             <div className="space-y-4">
                                 <div className="flex items-baseline justify-between gap-2">
-                                    <span className="text-xl font-black text-white italic truncate">{latestRepayment ? `${(latestRepayment.amount_declared || 0).toLocaleString()} F` : 'N/A'}</span>
+                                    <span className="text-xl font-black text-white italic truncate">{latestRepayment ? `${(latestRepayment.amount_declared || 0).toLocaleString('fr-FR')} F` : 'À définir'}</span>
                                     <span className={`px-2 py-1 rounded text-[8px] font-black uppercase tracking-tighter ${latestRepayment?.status === 'verified' ? 'bg-emerald-500/10 text-emerald-500' :
                                         latestRepayment?.status === 'pending' ? 'bg-amber-500/10 text-amber-500' :
                                             latestRepayment?.status === 'rejected' ? 'bg-red-500/10 text-red-500' : 'bg-slate-800 text-slate-500'
@@ -468,7 +468,7 @@ export default async function ClientDashboard() {
                                 </div>
                                 <div className="min-w-0">
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ce que je dois au total</p>
-                                    <p className="text-2xl font-black text-white tracking-tighter italic truncate">{(totalOutstanding || 0).toLocaleString()} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
+                                    <p className="text-2xl font-black text-white tracking-tighter italic truncate">{(totalOutstanding || 0).toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
                                 </div>
                             </div>
 

@@ -51,7 +51,7 @@ export default async function AdminLoanPage({
         user: `${loan.user?.prenom} ${loan.user?.nom} (${loan.user?.email})`,
         profile: loan.user,
         whatsapp: loan.user?.whatsapp || loan.user?.telephone,
-        amount: loan.amount,
+        amount: Number(loan.amount) + (Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)),
         amount_paid: loan.amount_paid || 0,
         plan: loan.plan?.name || 'N/A',
         date: loan.request_date,

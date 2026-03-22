@@ -109,17 +109,17 @@ export default function AdminRepaymentTable({
                                 </td>
                                 <td className="px-8 py-6">
                                     <div className="space-y-1">
-                                        <p className="font-black text-emerald-400 text-lg tracking-tighter italic leading-none">{row.amount_declared.toLocaleString()} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
+                                        <p className="font-black text-emerald-400 text-lg tracking-tighter italic leading-none">{row.amount_declared.toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
                                         {row.surplus_amount > 0 && (
                                             <span className="inline-flex px-2 py-0.5 rounded-md bg-blue-600/10 text-blue-500 text-[8px] font-black uppercase tracking-tighter border border-blue-500/20">
-                                                Pénalité: {row.surplus_amount.toLocaleString()} F
+                                                Pénalité: {row.surplus_amount.toLocaleString('fr-FR')} F
                                             </span>
                                         )}
                                     </div>
                                 </td>
                                 <td className="px-8 py-6">
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-white italic tracking-tighter uppercase mb-2">Total : {row.loan_amount.toLocaleString()} F</p>
+                                        <p className="text-[10px] font-black text-white italic tracking-tighter uppercase mb-2">Total : {row.loan_amount.toLocaleString('fr-FR')} F</p>
                                         <div className="flex items-center gap-2">
                                             <div className="h-1 flex-1 bg-slate-800 rounded-full overflow-hidden w-24">
                                                 <div
@@ -131,10 +131,10 @@ export default function AdminRepaymentTable({
                                         </div>
                                         <div className="flex justify-between items-center mt-2">
                                             <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">
-                                                Déjà payé : <span className="text-white italic">{row.loan_amount_paid.toLocaleString()} F</span>
+                                                Déjà payé : <span className="text-white italic">{row.loan_amount_paid.toLocaleString('fr-FR')} F</span>
                                             </p>
                                             <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">
-                                                Reste : <span className="text-emerald-500 italic">{(Math.max(0, row.loan_amount - row.loan_amount_paid)).toLocaleString()} F</span>
+                                                Reste : <span className="text-emerald-500 italic">{(Math.max(0, row.loan_amount - row.loan_amount_paid)).toLocaleString('fr-FR')} F</span>
                                             </p>
                                         </div>
                                     </div>
@@ -247,9 +247,9 @@ export default function AdminRepaymentTable({
                         <div className="space-y-3">
                             <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Montant à valider</p>
                             <div className="flex items-center gap-4">
-                                <p className="font-black text-emerald-400 text-2xl tracking-tighter italic leading-none">{row.amount_declared.toLocaleString()} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
+                                <p className="font-black text-emerald-400 text-2xl tracking-tighter italic leading-none">{row.amount_declared.toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
                                 {row.surplus_amount > 0 && (
-                                    <span className="px-2 py-1 bg-blue-600/10 text-blue-500 border border-blue-500/20 rounded-lg text-[8px] font-black uppercase tracking-tighter italic">+{row.surplus_amount.toLocaleString()} Pénalité</span>
+                                    <span className="px-2 py-1 bg-blue-600/10 text-blue-500 border border-blue-500/20 rounded-lg text-[8px] font-black uppercase tracking-tighter italic">+{row.surplus_amount.toLocaleString('fr-FR')} Pénalité</span>
                                 )}
                             </div>
                         </div>
@@ -265,7 +265,7 @@ export default function AdminRepaymentTable({
                                     style={{ width: `${Math.min((row.loan_amount_paid / row.loan_amount) * 100, 100)}%` }}
                                 />
                             </div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reste à payer : <span className="text-emerald-500">{(row.loan_amount - row.loan_amount_paid).toLocaleString()} F</span></p>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reste à payer : <span className="text-emerald-500">{(row.loan_amount - row.loan_amount_paid).toLocaleString('fr-FR')} F</span></p>
                         </div>
 
                         <div className="flex justify-between items-center pt-6 border-t border-white/5">
@@ -338,8 +338,8 @@ export default function AdminRepaymentTable({
                 onConfirm={handleDelete}
                 title="Supprimer ce remboursement ?"
                 message={`Vous allez supprimer définitivement le remboursement de ${deleteConfirm?.user || ''}.${deleteConfirm?.status === 'verified'
-                        ? ' ⚠️ Ce remboursement est VALIDÉ : son montant sera automatiquement déduit du solde payé du prêt correspondant, et la commission associée sera supprimée.'
-                        : ''
+                    ? ' ⚠️ Ce remboursement est VALIDÉ : son montant sera automatiquement déduit du solde payé du prêt correspondant, et la commission associée sera supprimée.'
+                    : ''
                     } Cette action est irréversible.`}
                 confirmText="Supprimer définitivement"
                 variant="danger"

@@ -115,7 +115,7 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                     loanData={{
                         amount: amount,
                         payoutNetwork: row.payout_network || 'MTN',
-                        dueDate: row.due_date || 'N/A'
+                        dueDate: row.due_date ? new Date(row.due_date).toLocaleDateString('fr-FR') : (row.status === 'pending' ? 'Délai à définir' : 'Archives'),
                     }}
                     personalData={{
                         address: row.borrower_address || row.profile.address || '',
@@ -220,7 +220,7 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <p className="font-black text-white text-lg tracking-tighter italic">{row.amount.toLocaleString()} <span className="text-[10px] not-italic text-slate-600 uppercase tracking-widest">FCFA</span></p>
+                                    <p className="text-[10px] font-black text-white italic tracking-tighter uppercase mb-2">Total : {row.amount ? row.amount.toLocaleString('fr-FR') : '0'} FCFA</p>
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className="px-3 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-xs font-black uppercase tracking-widest border border-blue-500/20 italic">
@@ -234,7 +234,7 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                                                 row.payout_network === 'Moov' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
                                                     'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
                                                 }`}>
-                                                {row.payout_network || 'N/A'}
+                                                {row.payout_network || 'À définir'}
                                             </span>
                                             <p className="text-xs font-black text-white italic">{row.payout_phone || 'Non renseigné'}</p>
                                         </div>
@@ -367,7 +367,7 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Montant demandé</p>
-                                <p className="font-black text-white text-2xl tracking-tighter italic leading-none">{row.amount.toLocaleString()} <span className="text-[10px] not-italic text-slate-600 tracking-normal uppercase">FCFA</span></p>
+                                <p className="font-black text-white text-2xl tracking-tighter italic leading-none">{row.amount.toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600 tracking-normal uppercase">FCFA</span></p>
                             </div>
                             <div className="space-y-2">
                                 <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Réception ({row.payout_network})</p>
@@ -491,19 +491,19 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Pièce d'identité</p>
-                                            <p className="text-sm font-bold text-blue-600 italic">{viewWaiver.borrower_id_details || 'N/A'}</p>
+                                            <p className="text-sm font-bold text-blue-600 italic">{viewWaiver.borrower_id_details || 'À définir'}</p>
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Né(e) le</p>
-                                            <p className="text-sm font-bold text-slate-600 italic">{viewWaiver.borrower_birth_date ? new Date(viewWaiver.borrower_birth_date).toLocaleDateString('fr-FR') : 'N/A'}</p>
+                                            <p className="text-sm font-bold text-slate-600 italic">{viewWaiver.borrower_birth_date ? new Date(viewWaiver.borrower_birth_date).toLocaleDateString('fr-FR') : 'À définir'}</p>
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Ville</p>
-                                            <p className="text-sm font-bold text-slate-600 italic">{viewWaiver.borrower_city || 'N/A'}</p>
+                                            <p className="text-sm font-bold text-slate-600 italic">{viewWaiver.borrower_city || 'À définir'}</p>
                                         </div>
                                         <div className="col-span-2">
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Adresse de Résidence</p>
-                                            <p className="text-sm font-bold text-slate-600 italic">{viewWaiver.borrower_address || 'N/A'}</p>
+                                            <p className="text-sm font-bold text-slate-600 italic">{viewWaiver.borrower_address || 'À définir'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -513,7 +513,7 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Montant Principal</span>
-                                            <span className="text-lg font-black text-slate-900 italic tracking-tighter">{viewWaiver.amount.toLocaleString()} FCFA</span>
+                                            <span className="text-lg font-black text-slate-900 italic tracking-tighter">{viewWaiver.amount.toLocaleString('fr-FR')} FCFA</span>
                                         </div>
                                         {new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') && (
                                             <div className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100 opacity-80">
@@ -523,7 +523,7 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                                         )}
                                         <div className="flex justify-between items-center bg-blue-50 p-3 rounded-xl border border-blue-100">
                                             <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Total à Rembourser</span>
-                                            <span className="text-xl font-black text-slate-900 italic tracking-tighter">{(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toLocaleString()} FCFA</span>
+                                            <span className="text-xl font-black text-slate-900 italic tracking-tighter">{(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toLocaleString('fr-FR')} FCFA</span>
                                         </div>
                                         {new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') && (
                                             <p className="text-[10px] text-slate-500 leading-relaxed italic border-l-2 border-red-500/50 pl-2">
@@ -611,12 +611,12 @@ export default function AdminLoanTable({ rows, currentUserRole, repaymentPhones 
                             </p>
 
                             <p className="text-base text-justify">
-                                Reconnais par la présente, avoir contracté auprès de la plateforme <strong>Creditly</strong>, un prêt de type "Avance sur Revenu" d'un montant de <strong className="border-b border-black">{viewWaiver.amount.toLocaleString()} FCFA</strong>{new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? <>, majoré de frais de dossier fixes de <strong className="border-b border-black">500 FCFA</strong></> : ''}, soit un montant total de :
+                                Reconnais par la présente, avoir contracté auprès de la plateforme <strong>Creditly</strong>, un prêt de type "Avance sur Revenu" d'un montant de <strong className="border-b border-black">{viewWaiver.amount.toLocaleString('fr-FR')} FCFA</strong>{new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? <>, majoré de frais de dossier fixes de <strong className="border-b border-black">500 FCFA</strong></> : ''}, soit un montant total de :
                             </p>
 
                             <div className="text-center p-8 bg-gray-50 border-4 border-double border-black">
                                 <div className="font-black text-4xl italic tracking-tighter mb-2">
-                                    {(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toLocaleString()} FCFA
+                                    {(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toLocaleString('fr-FR')} FCFA
                                 </div>
                                 <div className="text-[10px] font-black uppercase text-gray-500 border-t border-gray-200 pt-2 inline-block px-10">
                                     {numberToFrench(new Date(viewWaiver.date) >= new Date('2026-03-09T00:00:00') ? viewWaiver.amount + 500 : viewWaiver.amount).toUpperCase()} FRANCS CFA

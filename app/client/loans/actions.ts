@@ -116,7 +116,7 @@ export async function submitRepayment(formData: FormData) {
     const remaining = Number(loan.amount) - (Number(loan.amount_paid) || 0)
     /*
     if (numAmount > remaining) {
-        return { error: `Le montant (${numAmount.toLocaleString()} F) dépasse votre solde restant (${remaining.toLocaleString()} F).` }
+        return { error: `Le montant (${numAmount.toLocaleString('fr-FR')} F) dépasse votre solde restant (${remaining.toLocaleString('fr-FR')} F).` }
     }
     */
 

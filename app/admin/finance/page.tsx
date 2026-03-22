@@ -161,10 +161,14 @@ export default async function FinanceAuditPage({
     const { data: allLoans, error: errLoans } = await supabase.from('prets').select('*').in('status', ['approved', 'active', 'paid', 'overdue'])
 
     // Calculs "Expert Comptable"
+    // Calculs "Expert Comptable"
     const capitalPrete = allLoans?.reduce((acc, l) => acc + Number(l.amount), 0) || 0
-    const totalAttendu = allLoans?.reduce((acc, l) => acc + (Number(l.total_to_pay) || Number(l.amount) + 500), 0) || 0
+    const totalAttendu = allLoans?.reduce((acc, l) => {
+        const fee = Number(l.service_fee) || (new Date(l.created_at) >= new Date('2026-03-09') ? 500 : 0);
+        return acc + (Number(l.amount) + fee);
+    }, 0) || 0
     const dejaRecouvre = allLoans?.reduce((acc, l) => acc + (Number(l.amount_paid) || 0), 0) || 0
-    const resteARecouvrer = totalAttendu - dejaRecouvre
+    const resteARecouvrer = Math.max(0, totalAttendu - dejaRecouvre)
     const margeProjetee = totalAttendu - capitalPrete
 
     const totalWithdrawals = withdrawals?.filter(w => w.status === 'approved').reduce((acc, w) => acc + Number(w.amount), 0) || 0
@@ -196,18 +200,18 @@ export default async function FinanceAuditPage({
                             <CheckmarkFilled size={14} /> Solde Théorique des Comptes Mobile Money
                         </p>
                         <h2 className="text-5xl font-black text-white italic tracking-tighter">
-                            {theoreticalCashBalance.toLocaleString()} <span className="text-sm uppercase not-italic">FCFA</span>
+                            {theoreticalCashBalance.toLocaleString('fr-FR')} <span className="text-sm uppercase not-italic">FCFA</span>
                         </h2>
                         <p className="text-[9px] text-blue-100 font-bold mt-2 italic uppercase">Ce qui devrait être dans vos caisses (Inclus apport 2.000.000 F)</p>
                     </div>
                     <div className="flex gap-4 relative z-10 text-center">
                         <div className="bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 group-hover:bg-white/15 transition-all">
                             <p className="text-[9px] font-black text-blue-200 uppercase tracking-widest mb-1 italic">Entrées (Total)</p>
-                            <p className="text-xl font-black text-white italic tracking-tighter">+{totalCashIn.toLocaleString()} F</p>
+                            <p className="text-xl font-black text-white italic tracking-tighter">+{totalCashIn.toLocaleString('fr-FR')} F</p>
                         </div>
                         <div className="bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 group-hover:bg-white/15 transition-all">
                             <p className="text-[9px] font-black text-blue-200 uppercase tracking-widest mb-1 italic">Sorties (Total)</p>
-                            <p className="text-xl font-black text-white italic tracking-tighter">-{totalCashOut.toLocaleString()} F</p>
+                            <p className="text-xl font-black text-white italic tracking-tighter">-{totalCashOut.toLocaleString('fr-FR')} F</p>
                         </div>
                     </div>
                 </div>

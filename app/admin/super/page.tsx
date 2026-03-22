@@ -141,7 +141,7 @@ export default async function SuperAdminPage({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
                     {[
-                        { label: 'Revenue Période', value: monthlyRevenue + monthlyFeesRevenue, color: 'text-emerald-400', sub: `Subs + ${monthlyFeesRevenue.toLocaleString()} F frais`, icon: <Currency size={20} /> },
+                        { label: 'Revenue Période', value: monthlyRevenue + monthlyFeesRevenue, color: 'text-emerald-400', sub: `Subs + ${monthlyFeesRevenue.toLocaleString('fr-FR')} F frais`, icon: <Currency size={20} /> },
                         { label: 'Admin Gain (Total)', value: totalFeesCollected, color: 'text-blue-400', sub: 'Sur dossiers remboursés', icon: <Time size={20} /> },
                         { label: 'Volume Pénalités', value: totalPenaltiesCollected, color: 'text-blue-400', sub: 'Surplus perçus périodiquement', icon: <Wallet size={20} /> },
                         { label: 'Dette Totale', value: totalRemainingToRecover, color: 'text-red-400', sub: 'À récupérer sur prêts actifs', icon: <Document size={20} /> }

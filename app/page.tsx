@@ -161,12 +161,12 @@ export default async function Home() {
                                         <div className="absolute top-6 right-[-40px] bg-blue-600 text-white text-[8px] font-black uppercase py-2 px-12 rotate-45 transform">Populaire</div>
                                     )}
                                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 italic leading-none">{tier.name}</h4>
-                                    <p className="text-4xl font-black text-white italic mb-8 leading-none">{tier.price.toLocaleString()} <span className="text-[10px] font-black text-slate-600 not-italic">FCFA / mois</span></p>
+                                    <p className="text-4xl font-black text-white italic mb-8 leading-none">{tier.price.toLocaleString('fr-FR')} <span className="text-[10px] font-black text-slate-600 not-italic">FCFA / mois</span></p>
 
                                     <div className="space-y-6 mb-12 flex-grow">
                                         <div className="p-4 rounded-xl bg-slate-950 border border-white/5 shadow-inner text-center">
                                             <p className="text-[10px] font-black text-slate-600 uppercase italic mb-1">Plafond Déblocable</p>
-                                            <p className="text-2xl font-black text-emerald-500 italic uppercase leading-none">{tier.max_loan_amount.toLocaleString()} FCFA</p>
+                                            <p className="text-2xl font-black text-emerald-500 italic uppercase leading-none">{tier.max_loan_amount.toLocaleString('fr-FR')} FCFA</p>
                                         </div>
                                         <ul className="space-y-4">
                                             {[

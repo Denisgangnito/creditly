@@ -109,7 +109,7 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Montant prêté</p>
-                            <p className="text-5xl font-black text-white tracking-tighter italic">{(loan.amount || 0).toLocaleString()} <span className="text-xs not-italic text-slate-700">FCFA</span></p>
+                            <p className="text-5xl font-black text-white tracking-tighter italic">{(loan.amount || 0).toLocaleString('fr-FR')} <span className="text-xs not-italic text-slate-700">FCFA</span></p>
                         </div>
                     </div>
                 </div>
@@ -187,11 +187,11 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                                         <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Somme prêtée</p>
                                         {loan.service_fee && <span className="text-[8px] font-black text-blue-500 uppercase border border-blue-500/20 px-2 py-0.5 rounded">+ 500 F frais</span>}
                                     </div>
-                                    <p className="text-3xl font-black text-white tracking-tighter italic">{(loan.amount || 0).toLocaleString()} FCFA</p>
+                                    <p className="text-3xl font-black text-white tracking-tighter italic">{(loan.amount || 0).toLocaleString('fr-FR')} FCFA</p>
                                 </div>
                                 <div className="p-6 rounded-2xl bg-blue-600 border border-blue-500 shadow-xl shadow-blue-600/20 group hover:scale-[1.02] transition-transform">
                                     <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-2 italic">Reste à payer</p>
-                                    <p className="text-3xl font-black text-white tracking-tighter italic">{(loan.amount + (loan.service_fee || 0) - (loan.amount_paid || 0)).toLocaleString()} FCFA</p>
+                                    <p className="text-3xl font-black text-white tracking-tighter italic">{(loan.amount + (loan.service_fee || 0) - (loan.amount_paid || 0)).toLocaleString('fr-FR')} FCFA</p>
                                 </div>
                             </div>
                         </div>

@@ -9,6 +9,7 @@ import { ActionButton } from '@/app/components/ui/ActionButton'
 import LoanWaiver, { PersonalData } from './loan-waiver'
 
 interface Subscription {
+    end_date?: string;
     plan: {
         name: string;
         max_loan_amount: number;
@@ -50,9 +51,11 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData, 
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
 
-    // Calculate due date
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + (subscription.plan.repayment_delay_days || 30));
+    // Calculate due date based on subscription end date (most accurate)
+    const dueDate = subscription.end_date ? new Date(subscription.end_date) : new Date();
+    if (!subscription.end_date) {
+        dueDate.setDate(dueDate.getDate() + (subscription.plan.repayment_delay_days || 30));
+    }
     const formattedDueDate = dueDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
     const validateFirstStep = () => {
@@ -64,7 +67,7 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData, 
         }
 
         if (quotasStatus[amount]?.reached) {
-            setError(`Cette somme (${amount.toLocaleString()} F) n'est plus disponible ce mois-ci. Essayez un autre montant ou revenez le mois prochain.`)
+            setError(`Cette somme (${amount.toLocaleString('fr-FR')} F) n'est plus disponible ce mois-ci. Essayez un autre montant ou revenez le mois prochain.`)
             return false
         }
 
@@ -135,7 +138,7 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData, 
                 <div className="grid grid-cols-2 gap-4 pt-2">
                     <div>
                         <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Somme Max</p>
-                        <p className="text-sm font-black text-white italic tracking-tighter">{subscription.plan.max_loan_amount.toLocaleString()} <span className="text-[10px] not-italic text-slate-700 font-bold">FCFA</span></p>
+                        <p className="text-sm font-black text-white italic tracking-tighter">{subscription.plan.max_loan_amount.toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-700 font-bold">FCFA</span></p>
                     </div>
                     <div>
                         <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Délai pour payer</p>
@@ -172,7 +175,7 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData, 
                     </div>
                     <div className="flex justify-between px-1">
                         <p className="text-[8px] font-black text-slate-700 uppercase tracking-[0.2em] italic">Min: 1,000</p>
-                        <p className="text-[8px] font-black text-slate-700 uppercase tracking-[0.2em] italic">Max: {subscription.plan.max_loan_amount.toLocaleString()}</p>
+                        <p className="text-[8px] font-black text-slate-700 uppercase tracking-[0.2em] italic">Max: {subscription.plan.max_loan_amount.toLocaleString('fr-FR')}</p>
                     </div>
                     <div className="mt-2 p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex justify-between items-center">
                         <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest italic">Frais de dossier (Fixe)</p>

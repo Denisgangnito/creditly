@@ -31,42 +31,44 @@ export default function AdminNav({ userRoles }: { userRoles: UserRole[] }) {
     })
 
     return (
-        <nav className="sticky top-0 z-[100] w-full bg-slate-900/80 backdrop-blur-2xl border-b border-white/5 py-4">
-            <div className="main-container flex items-center justify-between">
-                <div className="flex items-center gap-10">
-                    <Link href="/admin/super" className="flex items-center gap-2 group">
-                        <Logo text={isAdminMaster ? 'Creditly Master' : 'Creditly Admin'} />
-                    </Link>
+        <>
+            <nav className="sticky top-0 z-[100] w-full bg-slate-900/80 backdrop-blur-2xl border-b border-white/5 py-4">
+                <div className="main-container flex items-center justify-between">
+                    <div className="flex items-center gap-10">
+                        <Link href="/admin/super" className="flex items-center gap-2 group">
+                            <Logo text={isAdminMaster ? 'Creditly Master' : 'Creditly Admin'} />
+                        </Link>
 
-                    <div className="hidden lg:flex items-center gap-1">
-                        {links.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${pathname === link.href ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                            >
-                                {link.name}
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="hidden md:block text-right pr-4 border-r border-white/5">
-                        <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest italic">{userRoles[0]?.replace('admin_', '')}</p>
+                        <div className="hidden lg:flex items-center gap-1">
+                            {links.map((link) => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${pathname === link.href ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                >
+                                    {link.name}
+                                </Link>
+                            ))}
+                        </div>
                     </div>
 
-                    <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="lg:hidden w-10 h-10 rounded-xl bg-slate-800 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all shadow-lg shadow-black/20"
-                    >
-                        {isMenuOpen ? <Close size={24} /> : <List size={24} />}
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className="hidden md:block text-right pr-4 border-r border-white/5">
+                            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest italic">{userRoles[0]?.replace('admin_', '')}</p>
+                        </div>
+
+                        <button
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="lg:hidden w-10 h-10 rounded-xl bg-slate-800 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all shadow-lg shadow-black/20"
+                        >
+                            {isMenuOpen ? <Close size={24} /> : <List size={24} />}
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </nav>
 
             {isMenuOpen && (
-                <div className="lg:hidden fixed inset-0 bg-slate-950 z-[999] animate-fade-in flex flex-col p-6 overflow-y-auto overflow-x-hidden">
+                <div className="lg:hidden fixed inset-0 h-screen w-screen bg-slate-950 z-[9999] animate-fade-in flex flex-col p-6 overflow-y-auto overflow-x-hidden">
                     {/* Top Section */}
                     <div className="flex items-center justify-between mb-8 shrink-0">
                         <Logo text={isAdminMaster ? 'Creditly Master' : 'Creditly Admin'} />
@@ -102,6 +104,6 @@ export default function AdminNav({ userRoles }: { userRoles: UserRole[] }) {
                     </div>
                 </div>
             )}
-        </nav>
+        </>
     )
 }
