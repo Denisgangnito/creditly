@@ -161,7 +161,13 @@ export default async function FinanceAuditPage({
         return acc + (Number(l.amount) + fee);
     }, 0) || 0
     const dejaRecouvre = allLoansAudit?.reduce((acc, l) => acc + (Number(l.amount_paid) || 0), 0) || 0
+    const totalFeesGlobal = allLoansAudit?.reduce((acc, l) => {
+        const fee = Number(l.service_fee) || (new Date(l.created_at) >= new Date('2026-03-09') ? 500 : 0);
+        return acc + fee;
+    }, 0) || 0
     const resteARecouvrer = Math.max(0, totalAttendu - dejaRecouvre)
+    const restePrincipal = Math.max(0, capitalPrete - dejaRecouvre)
+    const margeRestante = Math.max(0, resteARecouvrer - restePrincipal)
 
     // --- 7. PERFORMANCE DE LA PÉRIODE ---
     // Revenu Brut = Abonnements + Frais (500F) + Pénalités
@@ -287,20 +293,31 @@ export default async function FinanceAuditPage({
                         </p>
                     </div>
 
-                    {/* MARGE DE RÉCUPÉRATION (RECOVERY) */}
+                    {/* CAPITAL ET MARGE EN RISQUE (RECOVERY) */}
                     <div className="glass-panel p-6 bg-slate-900/50 border-slate-800 hover:border-amber-500/30 transition-all shadow-xl group">
                         <div className="flex justify-between items-start mb-4">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic leading-tight">Reste à Recouvrer<br />(Encours Global)</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic leading-tight">Recouvrement Restant<br />(Principal & Marge)</p>
                             <span className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
                                 <Time size={16} />
                             </span>
                         </div>
-                        <p className="text-3xl font-black text-amber-500 italic tracking-tighter mb-2">
-                            {resteARecouvrer.toLocaleString('fr-FR')} <span className="text-xs ml-1 uppercase not-italic font-bold">F</span>
-                        </p>
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                            <div>
+                                <p className="text-[9px] font-black text-rose-500 uppercase italic mb-1">Capital Net</p>
+                                <p className="text-2xl font-black text-white italic tracking-tighter">
+                                    {restePrincipal.toLocaleString('fr-FR')} <span className="text-xs not-italic">F</span>
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black text-amber-500 uppercase italic mb-1">Marge Attendue</p>
+                                <p className="text-2xl font-black text-white italic tracking-tighter">
+                                    {margeRestante.toLocaleString('fr-FR')} <span className="text-xs not-italic">F</span>
+                                </p>
+                            </div>
+                        </div>
                         <hr className="border-white/5 mb-3" />
                         <p className="text-[9px] text-slate-500 font-bold uppercase italic leading-relaxed">
-                            <span className="text-amber-500">Formule :</span> Capital + Frais attendus ({totalAttendu.toLocaleString()} F) - Déjà Payé ({dejaRecouvre.toLocaleString()} F)
+                            <span className="text-rose-500 italic">Formule Net :</span> Capital Prêté ({capitalPrete.toLocaleString()} F) - Déjà Payé ({dejaRecouvre.toLocaleString()} F)
                         </p>
                     </div>
                 </div>
@@ -337,8 +354,8 @@ export default async function FinanceAuditPage({
                                         </td>
                                         <td className="px-8 py-5">
                                             <span className={`text-[9px] font-black px-3 py-1.5 rounded-lg border italic tracking-widest uppercase ${entry.type.startsWith('REVENUE') ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                                    entry.type.startsWith('EXPENSE') ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
-                                                        'bg-red-500/10 text-red-500 border-red-500/20'
+                                                entry.type.startsWith('EXPENSE') ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                                                    'bg-red-500/10 text-red-500 border-red-500/20'
                                                 }`}>
                                                 {entry.type.replace('_', ' ')}
                                             </span>
@@ -360,8 +377,8 @@ export default async function FinanceAuditPage({
                                         <td className="px-8 py-5 text-center">
                                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-white/5">
                                                 <div className={`w-1.5 h-1.5 rounded-full ${entry.status === 'COMPLETED' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
-                                                        entry.status === 'OWED' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' :
-                                                            'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
+                                                    entry.status === 'OWED' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' :
+                                                        'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
                                                     }`} />
                                                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">{entry.status}</p>
                                             </div>
