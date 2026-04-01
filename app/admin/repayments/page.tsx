@@ -21,7 +21,7 @@ export default async function AdminRepaymentPage({
         .from('remboursements')
         .select(`
             *,
-            loan:prets(amount, amount_paid),
+            loan:prets(amount, amount_paid, service_fee, created_at),
             user:users!remboursements_user_id_fkey(email, nom, prenom, whatsapp, telephone),
             admin:users!remboursements_admin_id_fkey(email, nom, prenom, roles, whatsapp)
         `)
@@ -34,7 +34,7 @@ export default async function AdminRepaymentPage({
         user_id: r.user_id,
         user: `${r.user?.prenom} ${r.user?.nom} (${r.user?.email})`,
         whatsapp: r.user?.whatsapp || r.user?.telephone,
-        loan_amount: r.loan?.amount || 0,
+        loan_amount: (Number(r.loan?.amount) || 0) + (Number((r.loan as any)?.service_fee) || (new Date(r.loan?.created_at!) >= new Date('2026-03-09') ? 500 : 0)),
         loan_amount_paid: r.loan?.amount_paid || 0,
         amount_declared: r.amount_declared,
         surplus_amount: r.surplus_amount || 0,

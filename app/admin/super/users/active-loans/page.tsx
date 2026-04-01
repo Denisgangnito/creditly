@@ -74,7 +74,7 @@ export default async function ActiveLoansPage() {
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
-                                            <p className="text-sm font-black text-white italic">{Number(loan.amount).toLocaleString()} F</p>
+                                            <p className="text-sm font-black text-white italic">{Number(loan.amount).toLocaleString('fr-FR')} F</p>
                                             <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">{loan.snapshot?.name}</p>
                                         </td>
                                         <td className="px-8 py-6">
@@ -87,7 +87,7 @@ export default async function ActiveLoansPage() {
                                         </td>
                                         <td className="px-8 py-6">
                                             <p className="text-[10px] font-black text-emerald-500 italic">
-                                                {(Number(loan.amount) - Number(loan.amount_paid)).toLocaleString()} F
+                                                {(Number(loan.amount) - Number(loan.amount_paid)).toLocaleString('fr-FR')} F
                                             </p>
                                         </td>
                                         <td className="px-8 py-6 text-right">

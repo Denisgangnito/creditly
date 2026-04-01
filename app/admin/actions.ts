@@ -226,7 +226,9 @@ export async function updateLoanStatus(loanId: string, status: 'approved' | 'rej
             const kycAdminId = kyc?.admin_id
             const loanAdminId = adminId
 
-            if (kycAdminId || loanAdminId) {
+            const fee = Number(loan.service_fee) || (new Date(loan.created_at!) >= new Date('2026-03-09') ? 500 : 0)
+
+            if (fee >= 500 && (kycAdminId || loanAdminId)) {
                 const commissions = []
                 const feeShare = 100 // 100 for KYC, 100 for Loan, 100 for Repayment (later)
 
@@ -322,11 +324,12 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
     // 3. Update Loan Balance if Verified
     if (status === 'verified') {
         const amountVerified = repayment.amount_declared
-        const { data: loan } = await supabase.from('prets').select('amount, amount_paid, service_fee').eq('id', repayment.loan_id).single()
+        const { data: loan } = await supabase.from('prets').select('amount, amount_paid, service_fee, created_at').eq('id', repayment.loan_id).single()
 
         if (loan) {
             const currentPaid = Number(loan.amount_paid) || 0
-            const totalLoanAmount = Number(loan.amount) + (Number(loan.service_fee) || 0)
+            const fee = Number(loan.service_fee) || (new Date(loan.created_at!) >= new Date('2026-03-09') ? 500 : 0)
+            const totalLoanAmount = Number(loan.amount) + fee
             const remainingToPay = Math.max(0, totalLoanAmount - currentPaid)
 
             let amountAppliedToLoan = amountVerified
@@ -361,14 +364,14 @@ export async function updateRepaymentStatus(repaymentId: string, status: 'verifi
             }
 
             // --- REPAYMENT COMMISSION ---
-            // On donne 100 F à celui qui valide le remboursement (une seule fois par prêt pour éviter les abus)
+            // On donne 100 F à celui qui valide le remboursement (seulement si le prêt a des frais de 500 F)
             const { count } = await supabase
                 .from('admin_commissions')
                 .select('*', { count: 'exact', head: true })
                 .eq('loan_id', repayment.loan_id)
                 .eq('type', 'repayment_reward')
 
-            if ((count || 0) === 0 && adminId) {
+            if ((count || 0) === 0 && adminId && fee >= 500) {
                 await supabase.from('admin_commissions').insert({
                     loan_id: repayment.loan_id,
                     admin_id: adminId,
@@ -712,11 +715,12 @@ export async function createDirectRepayment(formData: FormData) {
     }
 
     // 2. Calculate Surplus before creating repayment
-    const { data: loan } = await supabase.from('prets').select('amount, amount_paid, service_fee').eq('id', loanId).single()
+    const { data: loan } = await supabase.from('prets').select('amount, amount_paid, service_fee, created_at').eq('id', loanId).single()
     if (!loan) return { error: "Prêt introuvable." }
 
     const currentPaid = Number(loan.amount_paid) || 0
-    const totalLoanAmount = Number(loan.amount) + (Number(loan.service_fee) || 0)
+    const fee = Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)
+    const totalLoanAmount = Number(loan.amount) + fee
     const remainingToPay = Math.max(0, totalLoanAmount - currentPaid)
 
     let amountAppliedToLoan = amount
@@ -780,5 +784,82 @@ export async function createDirectRepayment(formData: FormData) {
     revalidatePath('/client/dashboard')
     revalidatePath('/client/loans')
 
+    return { success: true }
+}
+
+// --- ADMIN WITHDRAWALS ACTIONS ---
+
+export async function requestWithdrawal(amount: number, method: string, details: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const adminId = user?.id
+
+    if (!adminId) return { error: "Non authentifié." }
+
+    // Check Balance - REALIZED Gains ONLY (from Paid Loans)
+    const { data: commissions } = await supabase
+        .from('admin_commissions')
+        .select('amount, loan:loan_id(status)')
+        .eq('admin_id', adminId)
+
+    const realizedComms = commissions?.filter((c: any) =>
+        c.loan?.status === 'paid' || c.type === 'repayment_reward' // Repayment reward is earned instantly as the money just came in
+    ).reduce((acc, c) => acc + Number(c.amount), 0) || 0
+
+    const { data: pendingWithdrawals } = await supabase
+        .from('admin_withdrawals')
+        .select('amount')
+        .eq('admin_id', adminId)
+        .in('status', ['pending', 'approved'])
+
+    const totalWithdrawn = pendingWithdrawals?.reduce((acc, w) => acc + Number(w.amount), 0) || 0
+    const balance = realizedComms - totalWithdrawn
+
+    if (amount > balance) {
+        return { error: `Solde retirable insuffisant. Seuls les dossiers ENTIÈREMENT REMBOURSÉS génèrent des gains retirables. Disponible : ${balance.toLocaleString('fr-FR')} F.` }
+    }
+
+    const { error } = await supabase
+        .from('admin_withdrawals')
+        .insert({
+            admin_id: adminId,
+            amount,
+            method,
+            payment_details: details,
+            status: 'pending'
+        })
+
+    if (error) return { error: getUserFriendlyErrorMessage(error) }
+
+    revalidatePath('/admin/profile')
+    revalidatePath('/admin/super')
+    return { success: true }
+}
+
+export async function updateWithdrawalStatus(withdrawalId: string, status: 'approved' | 'rejected', rejectionReason?: string) {
+    const role = await getCurrentUserRole()
+    if (!role || !['superadmin', 'admin_comptable', 'owner'].includes(role)) {
+        return { error: "Accès refusé." }
+    }
+
+    const supabaseAdmin = await createAdminClient()
+    const supabaseUser = await createClient()
+    const { data: { user } } = await supabaseUser.auth.getUser()
+    const adminId = user?.id
+
+    const { error } = await supabaseAdmin
+        .from('admin_withdrawals')
+        .update({
+            status,
+            processed_at: new Date().toISOString(),
+            processed_by: adminId,
+            rejection_reason: rejectionReason
+        })
+        .eq('id', withdrawalId)
+
+    if (error) return { error: getUserFriendlyErrorMessage(error) }
+
+    revalidatePath('/admin/profile')
+    revalidatePath('/admin/super')
     return { success: true }
 }

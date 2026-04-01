@@ -223,7 +223,12 @@ export default function AdminDirectRepaymentModal({
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm font-black text-white italic">{(loan.amount - loan.amount_paid).toLocaleString()} F</p>
+                                                <p className="text-sm font-black text-white italic">
+                                                    {(() => {
+                                                        const fee = Number((loan as any).service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0);
+                                                        return (Number(loan.amount) + fee - Number(loan.amount_paid)).toLocaleString('fr-FR');
+                                                    })()} F
+                                                </p>
                                                 <p className="text-[8px] font-black text-blue-300 opacity-50 uppercase tracking-tight">Reste à payer</p>
                                             </div>
                                         </button>

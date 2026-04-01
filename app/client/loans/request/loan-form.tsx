@@ -9,6 +9,7 @@ import { ActionButton } from '@/app/components/ui/ActionButton'
 import LoanWaiver, { PersonalData } from './loan-waiver'
 
 interface Subscription {
+    end_date?: string;
     plan: {
         name: string;
         max_loan_amount: number;
@@ -50,9 +51,11 @@ export default function LoanRequestForm({ subscription, quotasStatus, userData, 
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
 
-    // Calculate due date
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + (subscription.plan.repayment_delay_days || 30));
+    // Calculate due date based on subscription end date (most accurate)
+    const dueDate = subscription.end_date ? new Date(subscription.end_date) : new Date();
+    if (!subscription.end_date) {
+        dueDate.setDate(dueDate.getDate() + (subscription.plan.repayment_delay_days || 30));
+    }
     const formattedDueDate = dueDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
     const validateFirstStep = () => {

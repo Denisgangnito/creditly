@@ -44,7 +44,7 @@ export default function LoanContractActions({ loan, profile }: LoanContractActio
                         amount: loan.amount,
                         payoutPhone: loan.payout_phone || '',
                         payoutNetwork: loan.payout_network || 'MTN',
-                        dueDate: loan.due_date ? new Date(loan.due_date).toLocaleDateString('fr-FR') : 'Non définie'
+                        dueDate: loan.due_date ? new Date(loan.due_date).toLocaleDateString('fr-FR') : 'Date à définir'
                     }}
                     personalData={{
                         birthDate: loan.borrower_birth_date || '',
@@ -134,23 +134,22 @@ export default function LoanContractActions({ loan, profile }: LoanContractActio
                                 <Logo size="sm" className="grayscale contrast-200 brightness-0" />
                                 <div className="text-right">
                                     <p className="font-black">CONTRAT OFFICIEL</p>
-                                    <p className="text-[10px] italic">Signé le {loan.waiver_signed_at ? new Date(loan.waiver_signed_at).toLocaleDateString('fr-FR') : 'N/A'}</p>
+                                    <p className="text-[10px] italic">Signé le {loan.waiver_signed_at ? new Date(loan.waiver_signed_at).toLocaleDateString('fr-FR') : 'En attente de signature'}</p>
                                 </div>
                             </div>
 
                             <p className="text-justify italic">
-                                Je soussigné(e), Monsieur/Madame <strong>{profile.prenom} {profile.nom}</strong>,
-                                reconnaît avoir contracté auprès de <strong>Creditly</strong> un prêt de <strong>{loan.amount.toLocaleString()} FCFA</strong>
+                                Je soussigné(e), Monsieur/Madame <strong>{profile.prenom} {profile.nom}</strong>, reconnais avoir contracté d'un prêt de <strong>{loan.amount.toLocaleString('fr-FR')} FCFA</strong>
                                 {hasFee ? <> (majoré de 500 F de frais)</> : ''}.
                             </p>
 
                             <div className="p-4 bg-gray-50 border-2 border-double border-black text-center">
-                                <p className="text-2xl font-black italic">{totalAmount.toLocaleString()} FCFA</p>
+                                <p className="text-2xl font-black italic">{totalAmount.toLocaleString('fr-FR')} FCFA</p>
                                 <p className="text-[8px] font-black uppercase text-gray-500 mt-1">{amountInWords} FRANCS CFA</p>
                             </div>
 
                             <p className="text-justify font-bold">
-                                Je m'engage à rembourser cette somme au plus tard le : {loan.due_date ? new Date(loan.due_date).toLocaleDateString('fr-FR') : 'Non définie'}.
+                                Je m'engage à rembourser cette somme au plus tard le : {loan.due_date ? new Date(loan.due_date).toLocaleDateString('fr-FR') : 'Échéance à définir'}.
                             </p>
 
                             <div className="grid grid-cols-2 gap-8 pt-6 border-t border-black">
@@ -185,7 +184,7 @@ export default function LoanContractActions({ loan, profile }: LoanContractActio
                         </button>
                     </div>
                 </div>
-            </ConfirmModal>
+            </ConfirmModal >
         </>
     )
 }

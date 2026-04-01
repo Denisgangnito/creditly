@@ -87,13 +87,15 @@ export default async function ClientLoansPage() {
                                                 <td className="px-8 py-6">
                                                     <div className="flex flex-col gap-2">
                                                         <span className="text-xl font-black text-white tracking-tighter italic">
-                                                            {(loan.amount || 0).toLocaleString()} <span className="text-[10px] not-italic text-slate-600">FCFA</span>
+                                                            {(loan.amount || 0).toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600">FCFA</span>
                                                         </span>
                                                         {loan.status === 'active' && (loan.amount_paid || 0) > 0 && (
                                                             <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                                                                 <div
                                                                     className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                                                                    style={{ width: `${Math.min(100, ((loan.amount_paid || 0) / loan.amount) * 100)}%` }}
+                                                                    style={{
+                                                                        width: `${Math.min(100, ((loan.amount_paid || 0) / (Number(loan.amount) + (Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)))) * 100)}%`
+                                                                    }}
                                                                 ></div>
                                                             </div>
                                                         )}
@@ -107,7 +109,7 @@ export default async function ClientLoansPage() {
                                                                     'bg-red-500/10 text-red-400 border-red-500/20'
                                                         }`}>
                                                         {loan.status === 'active'
-                                                            ? ((loan.amount_paid || 0) > 0 ? `Actif (${Math.min(100, Math.round(((loan.amount_paid || 0) / loan.amount) * 100))}%)` : 'Actif')
+                                                            ? ((loan.amount_paid || 0) > 0 ? `Actif (${Math.min(100, Math.round(((loan.amount_paid || 0) / (Number(loan.amount) + (Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)))) * 100))}%)` : 'Actif')
                                                             : loan.status === 'overdue' ? (loansWithPendingPayments.has(loan.id) ? 'Vérification' : 'En Retard')
                                                                 : loan.status === 'pending' ? 'En Vérification'
                                                                     : loan.status === 'paid' ? 'Payé' : 'Rejeté'}
@@ -184,16 +186,18 @@ export default async function ClientLoansPage() {
 
                                     <div className="space-y-2">
                                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic leading-none">Somme prêtée</p>
-                                        <p className="text-3xl font-black text-white italic tracking-tighter leading-none">{(loan.amount || 0).toLocaleString()} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
+                                        <p className="text-3xl font-black text-white italic tracking-tighter leading-none">{(loan.amount || 0).toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
                                         {(loan.status === 'active' || loan.status === 'overdue') && (loan.amount_paid || 0) > 0 && (
                                             <div className="pt-2">
                                                 <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden mb-1">
                                                     <div
                                                         className={`${loan.status === 'overdue' ? 'bg-red-500' : 'bg-emerald-500'} h-full rounded-full transition-all duration-500`}
-                                                        style={{ width: `${Math.min(100, ((loan.amount_paid || 0) / loan.amount) * 100)}%` }}
+                                                        style={{
+                                                            width: `${Math.min(100, ((loan.amount_paid || 0) / (Number(loan.amount) + (Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)))) * 100)}%`
+                                                        }}
                                                     ></div>
                                                 </div>
-                                                <p className={`text-[8px] font-black ${loan.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'} uppercase tracking-widest italic`}>Avancement : {Math.min(100, Math.round(((loan.amount_paid || 0) / loan.amount) * 100))}% payé</p>
+                                                <p className={`text-[8px] font-black ${loan.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'} uppercase tracking-widest italic`}>Avancement : {Math.min(100, Math.round(((loan.amount_paid || 0) / (Number(loan.amount) + (Number(loan.service_fee) || (new Date(loan.created_at) >= new Date('2026-03-09') ? 500 : 0)))) * 100))}% payé</p>
                                             </div>
                                         )}
                                     </div>
@@ -264,7 +268,7 @@ export default async function ClientLoansPage() {
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <span className="text-xl font-black text-white tracking-tighter italic">
-                                                        {(repayment.amount_declared || 0).toLocaleString()} <span className="text-[10px] not-italic text-slate-600">FCFA</span>
+                                                        {(repayment.amount_declared || 0).toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600">FCFA</span>
                                                     </span>
                                                 </td>
                                                 <td className="px-8 py-6 text-left">
@@ -315,7 +319,7 @@ export default async function ClientLoansPage() {
 
                                     <div className="space-y-2">
                                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic leading-none">Somme envoyée</p>
-                                        <p className="text-3xl font-black text-white italic tracking-tighter leading-none">{(repayment.amount_declared || 0).toLocaleString()} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
+                                        <p className="text-3xl font-black text-white italic tracking-tighter leading-none">{(repayment.amount_declared || 0).toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600">FCFA</span></p>
                                     </div>
 
                                     <div className="pt-4 border-t border-white/5">

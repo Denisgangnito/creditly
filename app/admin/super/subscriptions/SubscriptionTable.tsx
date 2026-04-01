@@ -167,10 +167,10 @@ export default function SubscriptionTable({ rows }: { rows: Subscription[] }) {
                                                 <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">Déclaré / Attendu</p>
                                                 <div className="flex items-baseline gap-1">
                                                     <p className="font-black text-white text-lg tracking-tighter italic">
-                                                        {sub.amount_paid?.toLocaleString()}
+                                                        {sub.amount_paid?.toLocaleString('fr-FR')}
                                                     </p>
                                                     <span className="text-[10px] font-bold text-slate-500 tracking-tighter italic">
-                                                        / {sub.plan.price.toLocaleString()} F
+                                                        / {sub.plan.price.toLocaleString('fr-FR')} F
                                                     </span>
                                                 </div>
                                             </div>
@@ -286,13 +286,13 @@ export default function SubscriptionTable({ rows }: { rows: Subscription[] }) {
                                     <div className="space-y-2">
                                         <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Paiement Déclaré</p>
                                         <p className="font-black text-white text-2xl tracking-tighter italic leading-none">
-                                            {sub.amount_paid?.toLocaleString() || '0'} <span className="text-[10px] not-italic text-slate-600 tracking-normal uppercase">FCFA</span>
+                                            {sub.amount_paid?.toLocaleString('fr-FR') || '0'} <span className="text-[10px] not-italic text-slate-600 tracking-normal uppercase">FCFA</span>
                                         </p>
                                     </div>
                                     <div className="space-y-2">
                                         <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic leading-none">Paiement Attendu</p>
                                         <p className="font-black text-slate-400 text-xl tracking-tighter italic leading-none">
-                                            {sub.plan.price.toLocaleString()} <span className="text-[10px] not-italic text-slate-700 tracking-normal uppercase">FCFA</span>
+                                            {sub.plan.price.toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-700 tracking-normal uppercase">FCFA</span>
                                         </p>
                                     </div>
                                 </div>
@@ -385,7 +385,7 @@ export default function SubscriptionTable({ rows }: { rows: Subscription[] }) {
                 onClose={() => setConfirmSub(null)}
                 onConfirm={handleActivate}
                 title="Activer l'Abonnement ?"
-                message={confirmSub ? `Voulez-vous confirmer le paiement de ${(confirmSub.amount_paid || 0).toLocaleString()} FCFA et activer l'abonnement "${confirmSub.plan.name}" pour ${confirmSub.user.prenom} ${confirmSub.user.nom} ?` : ""}
+                message={confirmSub ? `Voulez-vous confirmer le paiement de ${(confirmSub.amount_paid || 0).toLocaleString('fr-FR')} FCFA et activer l'abonnement "${confirmSub.plan.name}" pour ${confirmSub.user.prenom} ${confirmSub.user.nom} ?` : ""}
                 confirmText="Confirmer & Activer"
                 variant="success"
                 isLoading={isProcessing}

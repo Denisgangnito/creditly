@@ -97,7 +97,7 @@ export default async function LoanRequestPage() {
                 <p className="mb-2 text-slate-400 font-bold italic">Vous avez atteint la somme maximale autorisée pour votre forfait {planData.name}.</p>
                 <div className="mb-10 p-4 rounded-xl bg-slate-950 border border-white/5 inline-block">
                     <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Ce que vous devez déjà</div>
-                    <div className="text-xl font-black text-white italic">{currentCumulativeDebt.toLocaleString()} <span className="text-[10px] text-slate-600">/ {planData.max_loan_amount.toLocaleString()} FCFA</span></div>
+                    <div className="text-xl font-black text-white italic">{currentCumulativeDebt.toLocaleString('fr-FR')} <span className="text-[10px] text-slate-600">/ {planData.max_loan_amount.toLocaleString('fr-FR')} FCFA</span></div>
                 </div>
                 <div>
                     <Link href="/client/dashboard">
@@ -138,11 +138,11 @@ export default async function LoanRequestPage() {
                     <div>
                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Somme encore possible</p>
                         <p className="text-2xl font-black text-white italic tracking-tighter">
-                            {remainingAmount.toLocaleString()} <span className="text-[10px] not-italic text-slate-600">FCFA</span>
+                            {remainingAmount.toLocaleString('fr-FR')} <span className="text-[10px] not-italic text-slate-600">FCFA</span>
                         </p>
                     </div>
                     <div className="text-right">
-                        <p className="text-[10px] font-bold text-slate-600 uppercase">Limite: {planData.max_loan_amount.toLocaleString()}</p>
+                        <p className="text-[10px] font-bold text-slate-600 uppercase">Limite: {planData.max_loan_amount.toLocaleString('fr-FR')}</p>
                         <div className="h-1 w-24 bg-slate-800 rounded-full mt-2 overflow-hidden">
                             <div
                                 className="h-full bg-blue-500 rounded-full"

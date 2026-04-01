@@ -60,7 +60,10 @@ export default async function UserDetailsPage({ params }: { params: Promise<{ id
                                         <div>
                                             <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Dette Totale</p>
                                             <p className="text-xl font-black text-red-500 italic tracking-tighter">
-                                                {(loans?.filter(l => ['active', 'overdue'].includes(l.status)).reduce((acc, l) => acc + (l.amount - (l.amount_paid || 0)), 0) || 0).toLocaleString()} <span className="text-[8px] not-italic text-slate-700">F</span>
+                                                {(loans?.filter(l => ['active', 'overdue'].includes(l.status)).reduce((acc, l) => {
+                                                    const fee = Number(l.service_fee) || (new Date(l.created_at) >= new Date('2026-03-09') ? 500 : 0);
+                                                    return acc + (Number(l.amount) + fee - (Number(l.amount_paid) || 0));
+                                                }, 0) || 0).toLocaleString('fr-FR')} <span className="text-[8px] not-italic text-slate-700">F</span>
                                             </p>
                                         </div>
                                     </div>
@@ -124,7 +127,7 @@ export default async function UserDetailsPage({ params }: { params: Promise<{ id
                             <hr className="border-white/5" />
 
                             <div>
-                                <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-6 italic">Informations Garant</h3>
+                                <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-6 italic">Personne de référence</h3>
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-xl bg-slate-950 border border-white/5 flex items-center justify-center text-slate-500">
@@ -142,7 +145,7 @@ export default async function UserDetailsPage({ params }: { params: Promise<{ id
                                             <Flash size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">WhatsApp Garant</p>
+                                            <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">WhatsApp Référence</p>
                                             <p className="text-sm font-bold text-white italic">{user.guarantor_whatsapp || 'N/A'}</p>
                                         </div>
                                     </div>
@@ -223,7 +226,7 @@ export default async function UserDetailsPage({ params }: { params: Promise<{ id
                                                     <Money size={24} />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[10px] font-black text-white uppercase italic">{Number(loan.amount).toLocaleString()} FCFA</p>
+                                                    <p className="text-[10px] font-black text-white uppercase italic">{Number(loan.amount).toLocaleString('fr-FR')} FCFA</p>
                                                     <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">{loan.snapshot?.name || 'Prêt'}</p>
                                                 </div>
                                             </div>
@@ -233,7 +236,7 @@ export default async function UserDetailsPage({ params }: { params: Promise<{ id
                                             </div>
                                             <div className="text-center">
                                                 <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Payé</p>
-                                                <p className="text-[10px] font-black text-emerald-500 italic">{Number(loan.amount_paid || 0).toLocaleString()} F</p>
+                                                <p className="text-[10px] font-black text-emerald-500 italic">{Number(loan.amount_paid || 0).toLocaleString('fr-FR')} F</p>
                                             </div>
                                             <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${loan.status === 'paid' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
                                                 loan.status === 'active' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
