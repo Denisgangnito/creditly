@@ -224,23 +224,15 @@ export async function sendUserEmail(type: UserNotificationType, data: UserEmailD
     }
 
     try {
-        // ⚠️ Sans domaine vérifié Resend : on redirige vers l'admin avec les infos du client
-        // Pour envoyer directement au client, vérifiez un domaine sur resend.com/domains
-        const isRedirected = true; // Passer à false quand un domaine est vérifié
-        const destination = isRedirected ? (adminEmail || OWNER_EMAIL) : data.email;
-
-        const redirectBanner = isRedirected ? `
-            <div style="background-color: #fef3c7; border: 2px solid #d97706; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-family: sans-serif;">
-                <p style="margin: 0; font-size: 12px; color: #92400e; font-weight: bold;">📧 Email destiné à : ${data.email}</p>
-                <p style="margin: 4px 0 0; font-size: 11px; color: #78350f;">Cet email est une copie admin (domaine Resend non vérifié). Transférez-le manuellement au client si nécessaire.</p>
-            </div>
-        ` : '';
-
+        // Envoi direct au client.
+        // FROM: "Creditly <onboarding@resend.dev>" fonctionne sur le plan gratuit Resend.
+        // Pour utiliser "notifications@creditly.click", vérifiez le domaine sur resend.com/domains
+        // puis changez le from en : 'Creditly <notifications@creditly.click>'
         await resend.emails.send({
             from: 'Creditly <onboarding@resend.dev>',
-            to: destination,
-            subject: isRedirected ? `[→ ${data.email}] ${subject}` : subject,
-            html: redirectBanner + html,
+            to: data.email,
+            subject: subject,
+            html: html,
         });
     } catch (error) {
         console.error('[EmailService] Erreur sendUserEmail:', error);
