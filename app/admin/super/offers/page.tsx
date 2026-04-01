@@ -9,7 +9,15 @@ export default async function OffersPage() {
     const supabase = await createAdminClient()
     const { data: offers } = await supabase.from('abonnements').select('*').order('price')
     const { data: quotas } = await supabase.from('global_quotas').select('*')
-    const quotaMap = (quotas || []).reduce((acc: any, q: any) => ({ ...acc, [q.plan_id]: q.monthly_limit }), {})
+    const quotaMap = (quotas || []).reduce((acc: any, q: any) => {
+        if (q.plan_id) acc[q.plan_id] = q.monthly_limit;
+        // Fallback for older schema
+        if (q.amount && !q.plan_id) {
+            const matchingPlan = offers?.find(o => Number(o.max_loan_amount) === Number(q.amount));
+            if (matchingPlan) acc[matchingPlan.id] = q.monthly_limit;
+        }
+        return acc;
+    }, {})
 
     return (
         <div className="py-10 md:py-16 animate-fade-in text-slate-300">
