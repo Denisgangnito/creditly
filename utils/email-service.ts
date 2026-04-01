@@ -1,11 +1,9 @@
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const resendDaryl = new Resend(process.env.RESEND_API_KEY_DARYL || process.env.RESEND_API_KEY);
 
 const adminEmail = process.env.ADMIN_EMAIL || 'creditly001@gmail.com';
-// ⚠️  IMPORTANT : Sans domaine vérifié sur Resend, les emails ne peuvent être envoyés
-// qu'à l'adresse propriétaire du compte Resend. Tous les emails clients sont donc
-// redirigés vers adminEmail avec les informations du client incluses.
 const OWNER_EMAIL = 'creditly001@gmail.com';
 
 type NotificationType = 'LOAN_REQUEST' | 'REPAYMENT' | 'KYC_SUBMISSION' | 'SUBSCRIPTION';
@@ -20,8 +18,7 @@ interface NotificationData {
 }
 
 /**
- * Envoie une notification aux administrateurs.
- * Envoi immédiat (pas de scheduledAt — fonctionnalité Pro Resend).
+ * Envoie une notification aux administrateurs via Resend.
  */
 export async function sendAdminNotification(type: NotificationType, data: NotificationData) {
     if (!process.env.RESEND_API_KEY) {
@@ -104,7 +101,6 @@ export async function sendAdminNotification(type: NotificationType, data: Notifi
     }
 
     try {
-        // Envoi immédiat à l'administrateur
         await resend.emails.send({
             from: 'Creditly Notifications <onboarding@resend.dev>',
             to: adminEmail || OWNER_EMAIL,
@@ -112,11 +108,11 @@ export async function sendAdminNotification(type: NotificationType, data: Notifi
             html: html,
         });
     } catch (error) {
-        console.error('Erreur notifications admin:', error);
+        console.error('Erreur notifications admin (Resend):', error);
     }
 }
 
-type UserNotificationType = 'KYC_APPROVED' | 'KYC_REJECTED' | 'LOAN_APPROVED' | 'LOAN_REJECTED' | 'LOAN_ACTIVE' | 'REPAYMENT_VALIDATED' | 'REPAYMENT_REJECTED' | 'SUBSCRIPTION';
+type UserNotificationType = 'KYC_APPROVED' | 'KYC_REJECTED' | 'LOAN_APPROVED' | 'LOAN_REJECTED' | 'LOAN_ACTIVE' | 'REPAYMENT_VALIDATED' | 'REPAYMENT_REJECTED' | 'SUBSCRIPTION' | 'SUBSCRIPTION_REJECTED';
 
 interface UserEmailData {
     email: string;
@@ -127,26 +123,13 @@ interface UserEmailData {
 }
 
 /**
- * Envoie un email à l'utilisateur.
- * Envoi immédiat (pas de scheduledAt — fonctionnalité Pro Resend).
+ * Envoie un email à l'utilisateur via Resend.
  */
 export async function sendUserEmail(type: UserNotificationType, data: UserEmailData) {
     if (!process.env.RESEND_API_KEY) return;
 
     let subject = `Creditly - Notification`;
-    let html = `
-        <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
-            <h2>Bonjour ${data.name},</h2>
-            <p>Nous vous informons de la mise à jour suivante concernant votre compte Creditly :</p>
-            <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <p><strong>Statut :</strong> ${type}</p>
-                ${data.amount ? `<p><strong>Montant :</strong> ${new Intl.NumberFormat('fr-FR').format(data.amount)} FCFA</p>` : ''}
-                ${data.details ? `<p><strong>Détails :</strong> ${data.details}</p>` : ''}
-            </div>
-            <p>Merci de votre confiance.</p>
-            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/client/dashboard" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px;">Accéder à mon espace</a>
-        </div>
-    `;
+    let html = '';
 
     // Personnalisation par type
     switch (type) {
@@ -221,13 +204,32 @@ export async function sendUserEmail(type: UserNotificationType, data: UserEmailD
                 </div>
             `;
             break;
+        case 'SUBSCRIPTION':
+            subject = `✅ Votre abonnement Creditly est actif !`;
+            html = `
+                <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                    <h2 style="color: #6366f1;">Bonjour ${data.name},</h2>
+                    <p>Félicitations ! Votre souscription à l'offre <strong>${data.planName || 'Creditly'}</strong> a été validée.</p>
+                    <p>Vous avez maintenant accès aux demandes de prêts correspondant à votre palier.</p>
+                    <a href="${process.env.NEXT_PUBLIC_SITE_URL}/client/dashboard" style="display: inline-block; background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px;">Accéder à mon espace</a>
+                </div>
+            `;
+            break;
+        case 'SUBSCRIPTION_REJECTED':
+            subject = `❌ Mise à jour de votre souscription Creditly`;
+            html = `
+                <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                    <h2 style="color: #dc2626;">Bonjour ${data.name},</h2>
+                    <p>Nous n'avons pas pu valider votre demande de souscription pour le moment.</p>
+                    ${data.details ? `<div style="background-color: #fef2f2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626;"><p><strong>Motif :</strong> ${data.details}</p></div>` : ''}
+                    <p>Veuillez vérifier vos informations ou contacter le support si vous pensez qu'il s'agit d'une erreur.</p>
+                    <a href="${process.env.NEXT_PUBLIC_SITE_URL}/client/subscriptions" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px;">Réessayer la souscription</a>
+                </div>
+            `;
+            break;
     }
 
     try {
-        // Envoi direct au client.
-        // FROM: "Creditly <onboarding@resend.dev>" fonctionne sur le plan gratuit Resend.
-        // Pour utiliser "notifications@creditly.click", vérifiez le domaine sur resend.com/domains
-        // puis changez le from en : 'Creditly <notifications@creditly.click>'
         await resend.emails.send({
             from: 'Creditly <onboarding@resend.dev>',
             to: data.email,
@@ -235,7 +237,7 @@ export async function sendUserEmail(type: UserNotificationType, data: UserEmailD
             html: html,
         });
     } catch (error) {
-        console.error('[EmailService] Erreur sendUserEmail:', error);
+        console.error('[EmailService] Erreur sendUserEmail (Resend):', error);
     }
 }
 
@@ -265,6 +267,27 @@ export async function sendWeeklyReport(data: WeeklyReportData) {
             html: html,
         });
     } catch (error) {
-        console.error('[EmailService] Erreur sendWeeklyReport:', error);
+        console.error('[EmailService] Erreur sendWeeklyReport (Resend):', error);
+    }
+}
+
+export async function sendPreNotification(email: string, name: string, message: string) {
+    if (!process.env.RESEND_API_KEY_DARYL) return;
+
+    try {
+        await resendDaryl.emails.send({
+            from: 'Creditly Alert <onboarding@resend.dev>',
+            to: email,
+            subject: '🔔 Rappel imminent - Creditly',
+            html: `
+                <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                    <h2 style="color: #ea580c;">Bonjour ${name},</h2>
+                    <p>${message}</p>
+                    <p style="font-size: 12px; color: #666; margin-top: 20px;">Ceci est un rappel automatique envoyé 5 minutes avant l'échéance.</p>
+                </div>
+            `,
+        });
+    } catch (error) {
+        console.error('[EmailService] Erreur sendPreNotification (Daryl):', error);
     }
 }

@@ -592,6 +592,21 @@ export async function rejectSubscription(subId: string, reason: string) {
         .eq('id', subId)
 
     if (error) return { error: getUserFriendlyErrorMessage(error) }
+
+    // NOTIFY USER OF REJECTION
+    const { sendUserEmail } = await import('@/utils/email-service')
+    const { data: sub } = await supabase.from('user_subscriptions').select('user_id').eq('id', subId).single()
+    if (sub) {
+        const { data: userData } = await supabase.from('users').select('email, prenom, nom').eq('id', sub.user_id).single()
+        if (userData?.email) {
+            await sendUserEmail('SUBSCRIPTION_REJECTED', {
+                email: userData.email,
+                name: `${userData.prenom} ${userData.nom}`,
+                details: reason
+            })
+        }
+    }
+
     revalidatePath('/admin/super/subscriptions')
     revalidatePath('/client/dashboard')
     revalidatePath('/client/subscriptions')
